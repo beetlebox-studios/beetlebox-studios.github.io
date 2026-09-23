@@ -4,8 +4,7 @@
 // Google Translate Element API to translate the whole page in-place.
 // The GT widget itself stays hidden — we drive it programmatically.
 //
-// Each language has joke font sub-options that expand when that language
-// is the active selection.
+// Braille is its own entry: a font swap only, no translation.
 
 const LANGUAGES = [
   { code: 'en',    flag: 'us', label: 'English'    },
@@ -27,18 +26,13 @@ const LANGUAGES = [
   { code: 'iw',    flag: 'il', label: 'עברית'      },
 ];
 
-// Joke languages — font-swap only, no translation
-const JOKE_LANGUAGES = [
-  { code: 'joke-barcode',   font: 'Libre Barcode 128', label: 'asdfghjkl' },
-  { code: 'joke-braille',   font: 'Braille-Regular',   label: 'asdfghjkl' },
-  { code: 'joke-wingdings', font: 'Wingdings',         label: 'asdfghjkl' },
-];
+// Font-swap entry — no translation
+const BRAILLE = { code: 'braille', icon: 'fa-solid fa-braille', label: 'Braille', font: 'Braille-Regular' };
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-let currentLang     = 'en'; // active real language code
-let currentJoke     = null; // active joke code, or null
-let jokeFontStyle   = null; // <style> tag injected for joke font
+let currentLang   = 'en';  // active real language code
+let brailleStyle  = null;  // <style> tag injected for the Braille font
 
 // ── Google Translate init callback (called by the GT script) ──────────────────
 
@@ -74,26 +68,25 @@ function setLanguage(langCode) {
   }
 }
 
-// ── Joke font swap ────────────────────────────────────────────────────────────
-
-function applyJokeFont(fontFamily) {
-  clearJokeFont();
-  jokeFontStyle = document.createElement('style');
-  jokeFontStyle.id = 'joke-font-style';
-  jokeFontStyle.textContent = `body, body *:not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not([class*="fa-"]):not(.lang-option--sub .lang-option-label) { font-family: '${fontFamily}', sans-serif !important; }`;
-  document.head.appendChild(jokeFontStyle);
-}
-
-function clearJokeFont() {
-  if (jokeFontStyle) { jokeFontStyle.remove(); jokeFontStyle = null; }
-  currentJoke = null;
-}
-
 function triggerGTSelect(langCode) {
   const select = document.querySelector('.goog-te-combo');
   if (!select) { location.reload(); return; }
   select.value = langCode;
   select.dispatchEvent(new Event('change'));
+}
+
+// ── Braille font swap ─────────────────────────────────────────────────────────
+
+function applyBraille() {
+  clearBraille();
+  brailleStyle = document.createElement('style');
+  brailleStyle.id = 'braille-font-style';
+  brailleStyle.textContent = `body, body *:not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not([class*="fa-"]):not(.lang-option-label) { font-family: '${BRAILLE.font}', sans-serif !important; }`;
+  document.head.appendChild(brailleStyle);
+}
+
+function clearBraille() {
+  if (brailleStyle) { brailleStyle.remove(); brailleStyle = null; }
 }
 
 // ── Build the dropdown UI ─────────────────────────────────────────────────────
@@ -108,117 +101,51 @@ function triggerGTSelect(langCode) {
   const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
   if (match) currentLang = decodeURIComponent(match[1]);
 
-  // Track which lang group is expanded
-  let expandedCode = currentLang;
-
-  // Build all language group rows
-  LANGUAGES.forEach(lang => {
-    const group = document.createElement('div');
-    group.className      = 'lang-group';
-    group.dataset.lang   = lang.code;
-
-    // ── Main language row
+  function makeOption(code, iconClass, label) {
     const row = document.createElement('button');
     row.className    = 'lang-option';
     row.role         = 'option';
-    row.dataset.code = lang.code;
-    row.setAttribute('aria-selected', lang.code === currentLang ? 'true' : 'false');
+    row.dataset.code = code;
+    row.setAttribute('aria-selected', 'false');
 
-    const flag = document.createElement('span');
-    flag.className = `fi fi-${lang.flag}`;
+    const icon = document.createElement(iconClass.startsWith('fi ') ? 'span' : 'i');
+    icon.className = iconClass;
 
     const name = document.createElement('span');
     name.className   = 'lang-option-label';
-    name.textContent = lang.label;
+    name.textContent = label;
 
-    row.appendChild(flag);
+    row.appendChild(icon);
     row.appendChild(name);
-    group.appendChild(row);
+    dropdown.appendChild(row);
+    return row;
+  }
 
-    // ── Sub-options (joke fonts)
-    const sub = document.createElement('div');
-    sub.className = 'lang-sublist';
-
-    // "Normal" sub-option (default font, first and selected by default)
-    const normalOpt = document.createElement('button');
-    normalOpt.className    = 'lang-option lang-option--sub';
-    normalOpt.role         = 'option';
-    normalOpt.dataset.code = `${lang.code}--normal`;
-    normalOpt.setAttribute('aria-selected', lang.code === currentLang && !currentJoke ? 'true' : 'false');
-    const normalArrow = document.createElement('i');
-    normalArrow.className = 'fa-solid fa-chevron-right lang-sub-arrow';
-    const normalLabel = document.createElement('span');
-    normalLabel.className   = 'lang-option-label';
-    normalLabel.textContent = 'asdfghjkl';
-    normalOpt.appendChild(normalArrow);
-    normalOpt.appendChild(normalLabel);
-    normalOpt.addEventListener('click', (e) => {
-      e.stopPropagation();
-      clearJokeFont();
-      updateSelected(lang, null);
-      updateButtonFlag(lang);
-    });
-    sub.appendChild(normalOpt);
-
-    // Joke font sub-options
-    JOKE_LANGUAGES.forEach(joke => {
-      const jOpt = document.createElement('button');
-      jOpt.className    = 'lang-option lang-option--sub';
-      jOpt.role         = 'option';
-      jOpt.dataset.code = `${lang.code}--${joke.code}`;
-      jOpt.setAttribute('aria-selected', 'false');
-
-      const jArrow = document.createElement('i');
-      jArrow.className = 'fa-solid fa-chevron-right lang-sub-arrow';
-
-      const jLabel = document.createElement('span');
-      jLabel.className        = 'lang-option-label';
-      jLabel.textContent      = joke.label;
-      jLabel.style.fontFamily = `'${joke.font}', sans-serif`;
-
-      jOpt.appendChild(jArrow);
-      jOpt.appendChild(jLabel);
-      jOpt.addEventListener('click', (e) => {
-        e.stopPropagation();
-        currentJoke = joke.code;
-        applyJokeFont(joke.font);
-        updateSelected(lang, joke);
-        updateButtonJoke(joke);
-      });
-      sub.appendChild(jOpt);
-    });
-
-    group.appendChild(sub);
-    dropdown.appendChild(group);
-
-    // Expand/collapse on language row click — do NOT close the dropdown
+  LANGUAGES.forEach(lang => {
+    const row = makeOption(lang.code, `fi fi-${lang.flag}`, lang.label);
     row.addEventListener('click', (e) => {
       e.stopPropagation();
-      const alreadyExpanded = expandedCode === lang.code;
-
-      dropdown.querySelectorAll('.lang-group').forEach(g => g.classList.remove('lang-group--expanded'));
-
-      if (!alreadyExpanded) {
-        group.classList.add('lang-group--expanded');
-        expandedCode = lang.code;
-        clearJokeFont();
-        currentJoke = null;
-        updateSelected(lang, null);
-        updateButtonFlag(lang);
-        setLanguage(lang.code);
-      } else {
-        expandedCode = null;
-      }
+      clearBraille();
+      updateSelected(lang.code);
+      updateButtonFlag(lang);
+      // Re-picking the active language only needs to drop Braille
+      if (lang.code !== currentLang) setLanguage(lang.code);
+      closeDropdown();
     });
+  });
 
-    // Start expanded if this is the active language
-    if (lang.code === currentLang) {
-      group.classList.add('lang-group--expanded');
-    }
+  const brailleRow = makeOption(BRAILLE.code, `${BRAILLE.icon} lang-icon`, BRAILLE.label);
+  brailleRow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    applyBraille();
+    updateSelected(BRAILLE.code);
+    updateButtonIcon(BRAILLE);
+    closeDropdown();
   });
 
   // Set initial button state
   const activeLang = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0];
+  updateSelected(activeLang.code);
   updateButtonFlag(activeLang);
 
   // Toggle dropdown open/close
@@ -238,29 +165,17 @@ function triggerGTSelect(langCode) {
     btn.setAttribute('aria-expanded', 'false');
   }
 
-  function updateSelected(lang, joke) {
-    // Clear all aria-selected
+  function updateSelected(code) {
     dropdown.querySelectorAll('.lang-option').forEach(opt => {
-      opt.setAttribute('aria-selected', 'false');
+      opt.setAttribute('aria-selected', opt.dataset.code === code ? 'true' : 'false');
     });
-    // Mark the language row
-    const langRow = dropdown.querySelector(`.lang-option[data-code="${lang.code}"]`);
-    if (langRow) langRow.setAttribute('aria-selected', 'true');
-    // Mark the sub-option
-    const subCode = joke ? `${lang.code}--${joke.code}` : `${lang.code}--normal`;
-    const subRow = dropdown.querySelector(`.lang-option[data-code="${subCode}"]`);
-    if (subRow) subRow.setAttribute('aria-selected', 'true');
   }
 
   function updateButtonFlag(lang) {
-    btnFlag.className        = `fi fi-${lang.flag} lang-btn-flag`;
-    btnFlag.style.fontFamily = '';
-    btnFlag.textContent      = '';
+    btnFlag.className = `fi fi-${lang.flag} lang-btn-flag`;
   }
 
-  function updateButtonJoke(joke) {
-    btnFlag.className        = 'lang-btn-flag lang-btn-flag--joke';
-    btnFlag.style.fontFamily = `'${joke.font}', sans-serif`;
-    btnFlag.textContent      = 'Aa';
+  function updateButtonIcon(entry) {
+    btnFlag.className = `${entry.icon} lang-btn-flag lang-btn-flag--icon`;
   }
 })();

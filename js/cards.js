@@ -3,14 +3,12 @@
 // Usage:
 //   new CardGrid({ src, target, type })
 //
-// JSON shape — person:
-//   { name, role, bio, image, links: { personal, twitter, github, itch, newgrounds, linkedin } }
-//
 // JSON shape — game:
-//   { title, meta, description, image, credits: ["Name", …], links: { itch, trailer } }
+//   { title, meta, status, description, image, blur, gif, jam: { label, logo }, credits: ["Name", …],
+//     links: { play, link, itch, trailer } }
 //
-// The game card's filter button cross-references the people grid by name.
-// Both grids are loaded via a shared registry so they can communicate.
+// The game card's filter button cross-references the team network (team.js)
+// by name via the shared GRID_REGISTRY.
 
 // ── Shared state ─────────────────────────────────────────────────────────────
 
@@ -129,55 +127,6 @@ function updateFilterBanner(gameTitle) {
 
 const CARD_TYPES = {
 
-  // ── Person card ─────────────────────────────────────────────────────────────
-  person: {
-    buildCard(item, i) {
-      const card = el('div', 'person-card card-base onload-animation');
-      card.style.setProperty('--delay', `${i * 60}ms`);
-
-      // Photo / monogram
-      const photoWrap = el('div', 'person-photo-wrap');
-      if (item.image) {
-        photoWrap.appendChild(makeImg(item.image, item.name, 'person-photo'));
-      } else {
-        photoWrap.appendChild(monogram(item.name));
-      }
-
-      // Hover overlay with link buttons (conditionally rendered)
-      const linkDefs = [
-        { key: 'personal',   icon: 'fa-solid fa-globe',        label: 'Personal site' },
-        { key: 'twitter',    icon: 'fa-brands fa-x-twitter',   label: 'Twitter/X' },
-        { key: 'github',     icon: 'fa-brands fa-github',      label: 'GitHub' },
-        { key: 'itch',       icon: 'fa-brands fa-itch-io',     label: 'itch.io' },
-        { key: 'newgrounds', icon: 'fa-brands fa-newgrounds',  label: 'Newgrounds' },
-        { key: 'linkedin',   icon: 'fa-brands fa-linkedin',    label: 'LinkedIn' },
-      ];
-      const populated = linkDefs.filter(d => item.links?.[d.key]);
-      if (populated.length) {
-        const overlay = el('div', 'person-overlay');
-        populated.forEach(({ key, icon, label }) => {
-          const a = el('a', 'person-overlay-btn');
-          a.href   = item.links[key];
-          a.target = '_blank';
-          a.rel    = 'noopener';
-          a.setAttribute('aria-label', label);
-          a.innerHTML = `<i class="${icon}"></i>`;
-          overlay.appendChild(a);
-        });
-        photoWrap.appendChild(overlay);
-      }
-
-      // Info
-      const info = el('div', 'person-info');
-      info.appendChild(text('p', 'person-name', item.name));
-      info.appendChild(text('p', 'person-role', item.role));
-
-      card.appendChild(photoWrap);
-      card.appendChild(info);
-      return card;
-    }
-  },
-
   // ── Game card ────────────────────────────────────────────────────────────────
   game: {
     buildCard(item, i) {
@@ -189,54 +138,24 @@ const CARD_TYPES = {
 
       // Static thumbnail — always present as the base layer
       if (item.image) {
-        imgWrap.appendChild(makeImg(item.image, item.title, 'work-img'));
+        imgWrap.appendChild(makeImg(item.image, item.title, item.blur ? 'work-img work-img--blur' : 'work-img'));
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
 
-      // GIF preview — sits above thumbnail, hidden until hover or eye-button tap.
+      // GIF preview — sits above thumbnail, hidden until hover.
       // src is left empty and only assigned on mouseenter so the GIF
       // starts from frame 1 each time (browsers restart a GIF when src is set).
       // On mouseleave src is cleared, stopping playback and freeing memory.
-      let gifEl = null;
-      let gifPinnedByBtn = false; // true when user toggled it on via the eye button
       if (item.gif) {
-        gifEl = makeImg('', item.title, 'work-gif');
+        const gifEl = makeImg('', item.title, 'work-gif');
         gifEl.setAttribute('aria-hidden', 'true');
-        card.addEventListener('mouseenter', () => { if (!gifPinnedByBtn) gifEl.src = item.gif; });
-        card.addEventListener('mouseleave', () => { if (!gifPinnedByBtn) gifEl.src = ''; });
+        card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
+        card.addEventListener('mouseleave', () => { gifEl.src = ''; });
         imgWrap.appendChild(gifEl);
       }
 
-      // ── Overlay buttons (top-right of image): link + filter + gif preview
+      // ── Overlay buttons (top-right of image): team filter
       const btnWrap = el('div', 'game-img-btns');
-
-      if (item.gif) {
-        const eyeBtn = el('button', 'game-img-btn game-gif-btn');
-        eyeBtn.setAttribute('aria-label', `Preview ${item.title}`);
-        eyeBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
-        eyeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          gifPinnedByBtn = !gifPinnedByBtn;
-          eyeBtn.classList.toggle('game-gif-btn--active', gifPinnedByBtn);
-          if (gifPinnedByBtn) {
-            gifEl.src = item.gif;
-          } else {
-            gifEl.src = '';
-          }
-        });
-        btnWrap.appendChild(eyeBtn);
-      }
-
-      if (item.links?.link) {
-        const linkBtn = el('a', 'game-img-btn');
-        linkBtn.href   = item.links.link;
-        linkBtn.target = '_blank';
-        linkBtn.rel    = 'noopener';
-        linkBtn.setAttribute('aria-label', `Play ${item.title}`);
-        linkBtn.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
-        linkBtn.addEventListener('click', e => e.stopPropagation());
-        btnWrap.appendChild(linkBtn);
-      }
 
       if (Array.isArray(item.credits)) {
         const filterBtn = el('button', 'game-img-btn');
@@ -255,12 +174,36 @@ const CARD_TYPES = {
 
       if (btnWrap.children.length) imgWrap.appendChild(btnWrap);
 
+      // ── Jam badge (bottom-right fade) — jam logo image if provided, else label text
+      if (item.jam) {
+        const badge = el('div', 'work-jam-badge');
+        if (item.jam.logo) {
+          badge.appendChild(makeImg(item.jam.logo, item.jam.label || 'Jam', 'work-jam-logo'));
+        } else {
+          badge.appendChild(text('span', 'work-jam-label', item.jam.label || 'JAM'));
+        }
+        imgWrap.appendChild(badge);
+      }
+
       // ── Info
       const info = el('div', 'work-info');
-      info.appendChild(text('p', 'work-title', item.title));
+      const titleRow = el('div', 'work-title-row');
+      titleRow.appendChild(text('p', 'work-title', item.title));
+      if (item.status) {
+        const status = text('span', 'work-status', item.status);
+        status.dataset.status = item.status.toLowerCase().replace(/\s+/g, '-');
+        titleRow.appendChild(status);
+      }
+      info.appendChild(titleRow);
       info.appendChild(text('p', 'work-meta',  item.meta));
       if (item.description) {
         info.appendChild(text('p', 'work-desc', item.description));
+      }
+
+      // Playable in the browser — whole card opens the game page
+      if (item.links?.play) {
+        info.appendChild(playLink(item, 'work-play'));
+        card.addEventListener('click', () => { location.href = item.links.play; });
       }
 
       const linkDefs = [
@@ -313,6 +256,15 @@ function monogram(name) {
   return node;
 }
 
+function playLink(item, className) {
+  const a = el('a', className);
+  a.href = item.links.play;
+  a.setAttribute('aria-label', `Play ${item.title}`);
+  a.innerHTML = '<i class="fa-solid fa-play"></i><span>Play</span>';
+  a.addEventListener('click', e => e.stopPropagation());
+  return a;
+}
+
 function buildLinks(links, defs, className) {
   if (!links) return null;
   const populated = defs.filter(d => links[d.key]);
@@ -331,77 +283,4 @@ function buildLinks(links, defs, className) {
   return wrap;
 }
 
-// ── Game jam card (compact) ───────────────────────────────────────────────────
-
-CARD_TYPES['game-jam'] = {
-  buildCard(item, i) {
-    const card = el('div', 'jam-card card-base onload-animation');
-    card.style.setProperty('--delay', `${i * 40}ms`);
-
-    // Image wrap with optional GIF preview on hover
-    const imgWrap = el('div', 'jam-img-wrap');
-
-    if (item.image) {
-      imgWrap.appendChild(makeImg(item.image, item.title, 'jam-thumb'));
-    }
-
-    if (item.gif) {
-      const gifEl = makeImg('', item.title, 'jam-gif');
-      gifEl.setAttribute('aria-hidden', 'true');
-      card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
-      card.addEventListener('mouseleave', () => { gifEl.src = ''; });
-      imgWrap.appendChild(gifEl);
-    }
-
-    card.appendChild(imgWrap);
-
-    const info = el('div', 'jam-info');
-    info.appendChild(text('p', 'jam-title', item.title));
-    info.appendChild(text('p', 'jam-meta',  item.meta));
-
-    if (item.links?.link) {
-      const a = el('a', 'jam-link');
-      a.href   = item.links.link;
-      a.target = '_blank';
-      a.rel    = 'noopener';
-      a.setAttribute('aria-label', `Play ${item.title}`);
-      a.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i>';
-      info.appendChild(a);
-    }
-
-    card.appendChild(info);
-    return card;
-  }
-};
-
-// ── Split loader — main games vs jam games ────────────────────────────────────
-
-(async () => {
-  let items;
-  try {
-    const res = await fetch('data/games.json');
-    items = await res.json();
-  } catch (e) {
-    console.warn('CardGrid: failed to load games.json', e);
-    return;
-  }
-
-  const mainGrid = document.getElementById('games-grid');
-  const jamGrid  = document.getElementById('jam-grid');
-  GRID_REGISTRY['games-grid'] = [];
-  GRID_REGISTRY['jam-grid']   = [];
-
-  items.forEach((item, i) => {
-    if (item.jam) {
-      const card = CARD_TYPES['game-jam'].buildCard(item, i);
-      GRID_REGISTRY['jam-grid'].push({ item, card });
-      jamGrid?.appendChild(card);
-    } else {
-      const card = CARD_TYPES['game'].buildCard(item, i);
-      GRID_REGISTRY['games-grid'].push({ item, card });
-      mainGrid?.appendChild(card);
-    }
-  });
-})();
-
-new CardGrid({ src: 'data/people.json', target: 'people-grid', type: 'person' });
+new CardGrid({ src: 'data/games.json',  target: 'games-grid',  type: 'game' });

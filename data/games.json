@@ -2,18 +2,34 @@
   {
     "title": "Bubblefish",
     "meta": "Unity 2D · Retro · 2026",
+    "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
+    "blur": false,
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/bubblefish.gif",
     "links": {
+      "play": "https://beetlebox-studios.github.io/games/bubblefish/",
       "link": "https://elanmakesgames.itch.io/bubblefish"
     }
   },
   {
-    "title": "Paper Game",
-    "meta": "Unity 2D · In Development",
+    "title": "Lexwright",
+    "meta": "Vite JS · Unity 2D · Retro · 2026",
+    "status": "In Development",
+    "image": "images/games/lexwright_thumbnail.png",
+    "blur": true,
+    "gif": "",
+    "links": {
+      "play": "https://beetlebox-studios.github.io/games/lexwright/"
+    }
+  },
+  {
+    "title": "Katami",
+    "meta": "Unity 2D",
+    "status": "In Development",
     "description": "A puzzle game about folding paper.",
-    "image": "",
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
+    "blur": false,
     "gif": "",
     "links": {
       "link": ""
@@ -22,22 +38,34 @@
   {
     "title": "Masknum Opus",
     "meta": "Unity 2D · Story · 2026",
+    "status": "Released",
     "description": "Infiltrate a bizarre, masked cult.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/masknum_thumbnail.png",
+    "blur": false,
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mask.gif",
-    "jam": true,
+    "jam": {
+      "label": "JAM",
+      "logo": ""
+    },
     "links": {
+      "play": "https://beetlebox-studios.github.io/games/masknum-opus/",
       "link": "https://elanmakesgames.itch.io/mask"
     }
   },
   {
     "title": "Molith",
     "meta": "Unity 3D · Exploration · 2025",
+    "status": "Released",
     "description": "Explore a mysterious field.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/molith_thumbnail.png",
+    "blur": false,
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mono.gif",
-    "jam": true,
+    "jam": {
+      "label": "JAM",
+      "logo": ""
+    },
     "links": {
+      "play": "https://beetlebox-studios.github.io/games/molith/",
       "link": "https://elanmakesgames.itch.io/molith"
     }
   }

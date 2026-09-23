@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&family=Libre+Barcode+128&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
   <link rel="stylesheet" href="css/style.css" />
@@ -17,18 +17,7 @@
 <!-- ── Navbar ─────────────────────────────────────────── -->
 <header id="navbar">
   <div class="navbar-inner">
-    <a href="#" class="navbar-logo">BeetleBox</a>
-    <nav class="navbar-links">
-      <div class="nav-dropdown-wrap">
-        <a href="#work" class="nav-btn">Games</a>
-        <div class="nav-dropdown">
-          <a href="/games" class="nav-dropdown-item">Mini Games</a>
-        </div>
-      </div>
-      <!-- <a href="#about"   class="nav-btn">About</a> -->
-      <a href="#people"  class="nav-btn">Team</a>
-      <a href="#contact" class="nav-btn">Contact</a>
-    </nav>
+    <a href="#" class="navbar-logo" aria-label="BeetleBox Studios"><span class="navbar-logo-mark"></span></a>
     <div class="navbar-actions">
       <!-- Language picker -->
       <div class="lang-wrap" id="lang-wrap">
@@ -65,29 +54,14 @@
   </div>
 </header>
 
-<!-- ── Hero ──────────────────────────────────────────── -->
-<section id="hero">
-  <img id="hero-logo" src="https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/bbtextpng.png" alt="BeetleBox" />
-</section>
+<main id="page">
 
 <!-- ── Games / Work ────────────────────────────────────── -->
 <section id="work" class="page-section onload-animation" style="--delay: 0ms">
-  <!-- Table layer: wood grain texture (grayscale) -->
-  <div class="work-table-bg"></div>
-  <!-- Sticker layer: draggable stickers sit on the table -->
-  <div class="work-sticker-layer" id="sticker-layer"></div>
-  <!-- Darkening overlay between table/stickers and the glass cards above -->
-  <div class="work-table-overlay"></div>
   <!-- Glass pane: the actual games grid -->
   <div class="section-inner">
     <div class="work-grid" id="games-grid">
-      <!-- Populated by cards.js from games.json (main games only) -->
-    </div>
-    <div class="jam-section">
-      <h3 class="jam-heading">Game Jams</h3>
-      <div class="jam-grid" id="jam-grid">
-        <!-- Populated by cards.js from games.json (jam games only) -->
-      </div>
+      <!-- Populated by cards.js from games.json -->
     </div>
   </div>
 </section>
@@ -116,11 +90,13 @@
 <!-- ── People ───────────────────────────────────────────── -->
 <section id="people" class="page-section onload-animation" style="--delay: 75ms">
   <div class="section-inner">
-    <div class="people-grid" id="people-grid">
-      <!-- Populated by cards.js from people.json -->
+    <div class="team-net" id="people-grid">
+      <!-- Populated by team.js from people.json: dev nodes + decorative web -->
     </div>
   </div>
 </section>
+
+</main>
 
 
 <!-- ── Footer ─────────────────────────────────────────── -->
@@ -138,9 +114,9 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="js/main.js"></script>
 <script src="js/cards.js"></script>
+<script src="js/team.js"></script>
 
 <script src="js/search.js"></script>
-<script src="js/stickers.js"></script>
 <script src="js/accent.js"></script>
 <script src="js/translate.js"></script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>

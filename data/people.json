@@ -3,7 +3,7 @@
     "name": "Elan",
     "role": "Programmer",
     "bio": "bio text goes here",
-    "image": "images/elan.JPG",
+    "image": "",
     "founder": true,
     "links": {
       "personal": "https://elanrubin.com/",
@@ -16,7 +16,7 @@
     "name": "Max",
     "role": "Artist and Designer",
     "bio": "bio text goes here",
-    "image": "images/max.JPG",
+    "image": "",
     "founder": true,
     "links": {
       "twitter": "https://x.com/Alphons63",
@@ -27,7 +27,7 @@
     "name": "Ryan",
     "role": "Programmer",
     "bio": "bio text goes here",
-    "image": "images/ryan.jpg",
+    "image": "",
     "founder": true,
     "links": {
       "github": "https://github.com/Ryan-Brosius",
@@ -72,7 +72,7 @@
     "founder": false,
     "links": {
       "itch": "https://hutt3.itch.io/",
-      "youtube" : "https://www.youtube.com/@hutthutthutt7321"
+      "youtube": "https://www.youtube.com/@hutthutthutt7321"
     }
   }
 ]

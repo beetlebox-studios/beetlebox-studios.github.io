@@ -12,8 +12,8 @@
   --card-bg:    oklch(0.20 0.014 var(--hue));
   --float-bg:   oklch(0.17 0.013 var(--hue));
   --text:       oklch(0.92 0.005 var(--hue));
-  --text-dim:   oklch(0.62 0.01  var(--hue));
-  --text-muted: oklch(0.42 0.008 var(--hue));
+  --text-dim:   oklch(0.76 0.01  var(--hue));
+  --text-muted: oklch(0.64 0.008 var(--hue));
   --border:     color-mix(in oklch, white 7%, transparent);
   --border-strong: color-mix(in oklch, white 14%, transparent);
   --radius:     12px;
@@ -229,11 +229,6 @@ h1, h2, h3, h4, h5, h6, p, a {
   src: url('Braille-Regular.ttf') format('truetype');
   font-display: swap;
 }
-@font-face {
-  font-family: 'Wingdings';
-  src: url('wingding.ttf') format('truetype');
-  font-display: swap;
-}
 
 /* ── Language picker ─────────────────────────────────── */
 .lang-wrap {
@@ -301,44 +296,17 @@ h1, h2, h3, h4, h5, h6, p, a {
   flex: 1;
 }
 
-.lang-group {
-  display: contents;
-}
-
-.lang-sublist {
-  display: none;
-}
-.lang-group--expanded .lang-sublist {
-  display: block;
-}
-
-.lang-option--sub {
-  padding-left: 1rem;
-  font-size: 0.75rem;
-  color: var(--text-dim);
-}
-.lang-option--sub .lang-option-label {
-  font-size: 0.78rem;
-  line-height: 1.2;
-}
-.lang-option--sub[aria-selected="true"] {
-  color: var(--primary);
-}
-.lang-sub-arrow {
-  font-size: 0.55rem;
-  opacity: 0.45;
-  margin-right: 0.3rem;
+/* Braille entry — icon in place of a flag */
+.lang-option .lang-icon {
+  width: 1.35em;
+  text-align: center;
   flex-shrink: 0;
 }
-
-.lang-btn-flag--joke {
-  font-size: 0.85rem;
-  line-height: 1;
-  width: auto;
-  height: auto;
+.lang-btn-flag--icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.9rem;
   color: var(--text);
 }
 
@@ -491,44 +459,6 @@ mark.search-hl.search-hl--current {
   font-size: 0.75rem;
 }
 
-/* ── Hero ────────────────────────────────────────────── */
-#hero {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  background: var(--page-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#hero-logo {
-  /* Hidden — used only to define natural dimensions for the ::before pseudo */
-  display: block;
-  width: min(520px, 72vw);
-  visibility: hidden;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Colored logo drawn as a masked pseudo-element on top */
-#hero::before {
-  content: '';
-  position: absolute;
-  width: min(520px, 72vw);
-  aspect-ratio: var(--logo-ratio, 4 / 1);
-  background: var(--primary);
-  -webkit-mask-image: url('https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/bbtextpng.png');
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-image: url('https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/bbtextpng.png');
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  pointer-events: none;
-}
-
 /* ── Page sections ───────────────────────────────────── */
 .page-section {
   padding: 96px 1.5rem;
@@ -557,77 +487,13 @@ mark.search-hl.search-hl--current {
   overflow: hidden;
 }
 
-/* Layer 1 — wood grain table texture (grayscale) */
-.work-table-bg {
-  position: absolute;
-  inset: 0;
-  background-image: url('../images/woodgrain.jpg');
-  background-size: cover;
-  background-position: center;
-  filter: grayscale(1) brightness(0.32);
-  z-index: 0;
-}
-
-/* Layer 2 — sticker canvas (sits on the table, below the overlay) */
-.work-sticker-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none; /* individual stickers re-enable their own events */
-}
-
-/* Layer 3 — half-transparent black overlay (darkens table + stickers visually,
-   pointer-events:none so clicks pass through to stickers below) */
-.work-table-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.52);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* Layer 4 — the section-inner / games grid floats above everything */
-#work .section-inner {
-  position: relative;
-  z-index: 3;
-}
-
-/* ── Stickers ────────────────────────────────────────── */
-/* Outline is baked into the image at init — no CSS filter needed for it.
-   Single drop-shadow here is just the cast shadow beneath the sticker. */
-.sticker {
-  position: absolute;
-  cursor: grab;
-  user-select: none;
-  pointer-events: auto;
-  touch-action: none;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.55));
-  transition: transform 0.15s ease, filter 0.15s ease;
-}
-.sticker img {
-  display: block;
-  pointer-events: none;
-  -webkit-user-drag: none;
-  image-rendering: pixelated;
-}
-.sticker:hover {
-  transform: scale(1.08) rotate(var(--sticker-rot, 0deg));
-  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7));
-  z-index: 10;
-}
-.sticker.dragging {
-  cursor: grabbing;
-  transform: scale(1.14) rotate(var(--sticker-rot, 0deg));
-  filter: drop-shadow(0 14px 20px rgba(0,0,0,0.75));
-  z-index: 20;
-  transition: none;
-}
-
 .work-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
+@media (max-width: 900px) { .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .work-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .work-card {
   cursor: pointer;
@@ -658,6 +524,9 @@ mark.search-hl.search-hl--current {
   transition: opacity 0.3s, transform 0.5s var(--ease);
 }
 .work-img[src]:not([src=""]) { opacity: 1; }
+/* "blur": true in games.json — soften the thumbnail (e.g. early WIP art) */
+.work-img--blur { filter: blur(8px); transform: scale(1.12); }
+.work-card:hover .work-img.work-img--blur { transform: scale(1.16); } /* oversized so blurred edges stay hidden */
 .work-card:hover .work-img { transform: scale(1.04); }
 
 /* GIF preview — stacked above the static thumbnail */
@@ -738,12 +607,6 @@ mark.search-hl.search-hl--current {
   border-color: color-mix(in oklch, var(--primary) 50%, transparent);
 }
 .game-img-btn:active { transform: scale(0.9); }
-/* Active state — GIF preview is pinned on */
-.game-gif-btn--active {
-  color: var(--primary);
-  background: color-mix(in oklch, var(--primary) 20%, var(--float-bg));
-  border-color: color-mix(in oklch, var(--primary) 50%, transparent);
-}
 
 /* Active state — filter is currently applied for this game */
 .game-filter-btn--active {
@@ -753,111 +616,24 @@ mark.search-hl.search-hl--current {
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 20%, transparent);
 }
 
-/* ── Game Jams subsection ────────────────────────────── */
-.jam-section {
-  margin-top: 2.5rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border);
-  pointer-events: none; /* pass clicks through to stickers below */
-}
-
-.jam-heading {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 1rem;
-  pointer-events: none;
-}
-
-.jam-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.625rem;
-  pointer-events: none; /* cards re-enable their own events */
-}
-
-.jam-card {
-  display: flex;
+/* ── Play pill — links to the in-browser game page ───── */
+.work-play {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
-  cursor: default;
-  pointer-events: auto;
-  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary);
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  border: 1px solid color-mix(in oklch, var(--primary) 25%, transparent);
+  text-decoration: none;
+  transition: background 0.15s var(--ease), transform 0.15s var(--ease);
 }
-.jam-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-
-/* Image wrap — square thumbnail with GIF preview stacked above */
-.jam-img-wrap {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-  border-radius: calc(var(--radius) - 2px);
-  overflow: hidden;
-  background: oklch(0.18 0.02 var(--hue));
-}
-
-.jam-thumb {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: calc(var(--radius) - 2px);
-}
-
-.jam-gif {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  color: transparent;
-  transition: opacity 0.25s var(--ease);
-  pointer-events: none;
-}
-.jam-gif[src]:not([src=""]) { opacity: 1; }
-
-.jam-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.jam-title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.jam-meta {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.jam-link {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  margin-top: 0.2rem;
-  transition: color 0.15s var(--ease);
-  align-self: flex-start;
-}
-.jam-link:hover { color: var(--primary); }
+.work-play { margin-top: 0.875rem; }
+.work-play:hover { background: color-mix(in oklch, var(--primary) 22%, transparent); }
+.work-play:active { transform: scale(0.95); }
 
 /* ── Person card — all same size now ─────────────────── */
 
@@ -917,7 +693,7 @@ mark.search-hl.search-hl--current {
   width: 52px;
   height: 52px;
   pointer-events: none;
-  /* Same hard white outline as the table stickers */
+  /* Hard white outline, vinyl-sticker style */
   filter:
     drop-shadow(-3px -3px 0 white)
     drop-shadow( 3px -3px 0 white)
@@ -996,6 +772,67 @@ mark.search-hl.search-hl--current {
   font-weight: 500;
   color: var(--text);
   margin-bottom: 0.3rem;
+}
+
+.work-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+.work-title-row .work-title { margin-bottom: 0; }
+
+/* Status pill — Released / In Development / Shelved */
+.work-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: color-mix(in oklch, white 5%, transparent);
+  border: 1px solid var(--border);
+}
+/* Fixed green — does not follow the accent colour picker */
+.work-status[data-status="released"] {
+  color: oklch(0.75 0.18 140);
+  background: color-mix(in oklch, oklch(0.75 0.18 140) 10%, transparent);
+  border-color: color-mix(in oklch, oklch(0.75 0.18 140) 25%, transparent);
+}
+.work-status[data-status="in-development"] {
+  color: oklch(0.8 0.14 80);
+  background: color-mix(in oklch, oklch(0.8 0.14 80) 10%, transparent);
+  border-color: color-mix(in oklch, oklch(0.8 0.14 80) 25%, transparent);
+}
+
+/* Jam badge — black fade from the image's bottom-right corner */
+.work-jam-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2; /* above the GIF preview, below the overlay buttons */
+  width: 55%;
+  height: 60%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0.6rem 0.8rem;
+  background: radial-gradient(ellipse at bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 40%, transparent 72%);
+  pointer-events: none;
+}
+.work-jam-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: #fff;
+}
+.work-jam-logo {
+  max-width: 70%;
+  max-height: 40%;
+  object-fit: contain;
 }
 
 .work-meta {
@@ -1481,6 +1318,233 @@ mark.search-hl.search-hl--current {
   color: var(--text-muted);
 }
 
+/* ── Navbar logo (masked so it follows the accent colour) ── */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+}
+.navbar-logo-mark {
+  display: block;
+  height: 1.9rem;
+  aspect-ratio: 1270 / 347;
+  background: var(--primary);
+  -webkit-mask: url('https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/bbtextpng.png') center / contain no-repeat;
+          mask: url('https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/bbtextpng.png') center / contain no-repeat;
+}
+
+/* ── Single-screen layout ────────────────────────────── */
+/* Navbar, games panel + team panel side by side, slim footer —
+   everything fits the viewport on desktop, no page scroll. */
+:root { --page-width: 1440px; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+#navbar { position: relative; flex-shrink: 0; }
+
+#page {
+  flex: 1;
+  width: 100%;
+  max-width: calc(var(--page-width) + 3rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  gap: 1rem;
+}
+
+#page .page-section {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--page-bg) 80%, oklch(0.12 0.02 var(--hue)));
+  min-height: 0;
+  overflow: hidden;
+}
+#page .section-inner {
+  max-width: none;
+  height: 100%;
+  position: relative;
+}
+#work .section-inner { padding: 0.75rem; }
+
+#site-footer {
+  flex-shrink: 0;
+  border-top: none;
+  padding: 0.6rem 1.5rem 0.75rem;
+}
+.footer-inner { justify-content: center; }
+
+/* Compact game cards: image fills the cell, one-line info below */
+.work-grid { grid-template-rows: repeat(3, minmax(0, 1fr)); height: 100%; gap: 0.75rem; }
+.work-card { display: flex; flex-direction: column; min-height: 0; }
+.work-img-wrap { flex: 1; min-height: 0; aspect-ratio: auto; }
+.work-info { padding: 0.5rem 0.75rem 0.6rem; }
+.work-title-row { margin-bottom: 0.15rem; }
+.work-title,
+.work-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.work-desc,
+.work-play { display: none; }
+
+@media (min-width: 901px) {
+  body { height: 100vh; height: 100dvh; overflow: hidden; }
+}
+
+@media (max-width: 900px) {
+  #page { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .work-grid { grid-template-rows: none; height: auto; }
+  .work-img-wrap { flex: none; aspect-ratio: 16 / 9; }
+  #people .section-inner { height: 600px; }
+}
+
+/* ── Team network ────────────────────────────────────── */
+.team-net {
+  position: absolute;
+  inset: 0;
+  --node-size: 72px;
+}
+
+/* Filter banner floats over the web instead of pushing it down */
+#people .people-filter-banner {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+  margin: 0;
+}
+
+.team-web {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.team-web-edge {
+  stroke: color-mix(in oklch, var(--primary) 60%, var(--text-muted));
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.team-web-edge--dev {
+  stroke: var(--primary);
+}
+.team-web-node {
+  fill: color-mix(in oklch, var(--primary) 70%, var(--text));
+  opacity: 0.7;
+}
+
+.team-node {
+  position: absolute;
+  width: var(--node-size);
+  height: var(--node-size);
+  z-index: 2;
+  transition: opacity 0.3s var(--ease), filter 0.3s var(--ease);
+  animation: fade-in-up 0.4s var(--ease) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.team-node-circle {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid color-mix(in oklch, var(--primary) 45%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), var(--shadow);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.team-node:hover .team-node-circle {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent),
+              0 0 18px color-mix(in oklch, var(--primary) 45%, transparent);
+  transform: scale(1.06);
+}
+.team-node-circle .person-monogram {
+  font-size: calc(var(--node-size) * 0.36);
+  font-weight: 500;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 12%, var(--card-bg));
+}
+.team-node-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.team-node-label {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--page-bg) 85%, transparent);
+}
+.team-node-name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+}
+.team-node-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+  opacity: 0.85;
+}
+
+/* Links drop in under the label on hover */
+.team-node-links {
+  display: flex;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.team-node:hover { z-index: 4; }
+.team-node:hover .team-node-links {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.team-node-links a {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--card-bg);
+  border: 1px solid color-mix(in oklch, var(--primary) 40%, transparent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.team-node-links a:hover {
+  color: var(--page-bg);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Dimmed by the game-card credit filter (cards.js) */
+.team-node.person-card--hidden {
+  opacity: 0.2;
+  filter: grayscale(0.6);
+  pointer-events: none;
+  transform: none;
+}
+
 /* ── Mobile ──────────────────────────────────────────── */
 @media (max-width: 640px) {
   /* Hide section nav links */
@@ -1506,14 +1570,6 @@ mark.search-hl.search-hl--current {
     max-width: calc(100vw - 1.5rem);
   }
 
-  /* Hero logo smaller on mobile */
-  #hero-logo {
-    width: min(320px, 88vw);
-  }
-  #hero::before {
-    width: min(320px, 88vw);
-  }
-
   /* Section padding tighter */
   .page-section {
     padding: 64px 1rem;
@@ -1530,9 +1586,10 @@ mark.search-hl.search-hl--current {
     transform: translateY(0);
   }
 
-  /* Always show person overlay buttons on mobile (no hover) */
-  .person-overlay {
+  /* Always show dev node links on mobile (no hover) */
+  .team-node-links {
     opacity: 1;
+    transform: none;
     pointer-events: auto;
   }
 }
