@@ -1,0 +1,27 @@
+
+# AI assistant tooling (kept local, never pushed)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+AGENTS.md
+GEMINI.md
+.gemini/
+.codex/
+.cursor/
+.cursorrules
+.cursorignore
+.windsurf/
+.windsurfrules
+.aider*
+.continue/
+.github/copilot-instructions.md
+
+# planning and scratch notes (kept local, never pushed)
+plans/
+**/plans/
+PLAN.md
+TODO.md
+NOTES.md
+*.plan.md
+*_plan.md

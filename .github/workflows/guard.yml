@@ -1,0 +1,46 @@
+name: Guard
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for AI tooling and planning files
+        run: |
+          found=$(git ls-files | grep -iE '(^|/)(\.claude/|CLAUDE(\.local)?\.md$|AGENTS\.md$|GEMINI\.md$|\.mcp\.json$|\.cursor/|\.cursorrules$|\.windsurf|\.aider|copilot-instructions\.md$|plans/|PLAN\.md$|TODO\.md$|NOTES\.md$|[^/]*[._]plan\.md$)' || true)
+          if [ -n "$found" ]; then
+            echo "These files must not be committed:"
+            echo "$found"
+            exit 1
+          fi
+
+      - name: Check for AI commit attribution
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
+              range="$BEFORE..HEAD"
+            else
+              range="HEAD~1..HEAD"
+            fi
+          else
+            range="origin/main..HEAD"
+          fi
+          found=$(git log --format='%h %an <%ae> | %cn <%ce>%n%B' "$range" | grep -iE '(noreply@anthropic\.com|^co-authored-by:.*(claude|anthropic|copilot|cursor)|^claude-session:|generated with \[claude code\])' || true)
+          if [ -n "$found" ]; then
+            echo "AI attribution found in $range:"
+            echo "$found"
+            exit 1
+          fi
+          echo "No AI attribution in $range"
