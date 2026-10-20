@@ -6,6 +6,12 @@
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/bubblefish.gif",
+    "credits": [
+      "Elan",
+      "Max",
+      "AnglerFishArt",
+      "Drew"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/bubblefish/",
       "itch": "https://elanmakesgames.itch.io/bubblefish"
@@ -20,6 +26,10 @@
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
     "screenshot": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/screenshots/bookwyrm_playfield.png",
     "gif": "",
+    "credits": [
+      "Elan",
+      "Max"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/lexwright/"
     }
@@ -48,12 +58,34 @@
     }
   },
   {
+    "title": "Sumo Square",
+    "draft": true,
+    "meta": "Unity 2D · 2026",
+    "status": "In Development",
+    "image": "",
+    "gif": "",
+    "credits": [
+      "Elan",
+      "Max",
+      "Ryan",
+      "Drew"
+    ],
+    "links": {}
+  },
+  {
     "title": "Katami",
     "meta": "Unity 2D",
     "status": "In Development",
     "description": "A puzzle game about folding paper.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
     "gif": "",
+    "credits": [
+      "Max",
+      "Ryan",
+      "AnglerFishArt",
+      "hutthutthutt",
+      "Mafgar"
+    ],
     "links": {
       "steam": "https://store.steampowered.com/app/3828230/KATAMI_A_Paper_Story/"
     }
@@ -69,6 +101,12 @@
       "label": "JAM",
       "logo": "images/jams/masknum-opus.png"
     },
+    "credits": [
+      "Elan",
+      "Michael",
+      "Ryan",
+      "Max"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/masknum-opus/",
       "itch": "https://elanmakesgames.itch.io/mask"
@@ -85,6 +123,10 @@
       "label": "JAM",
       "logo": "images/jams/molith.png"
     },
+    "credits": [
+      "Elan",
+      "Max"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/molith/",
       "itch": "https://elanmakesgames.itch.io/molith"
