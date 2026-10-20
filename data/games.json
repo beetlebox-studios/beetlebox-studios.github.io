@@ -5,8 +5,13 @@
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
-    "secret": false,
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/bubblefish.gif",
+    "credits": [
+      "Elan",
+      "Max",
+      "AnglerFishArt",
+      "Andrew"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/bubblefish/",
       "itch": "https://elanmakesgames.itch.io/bubblefish"
@@ -15,24 +20,26 @@
   {
     "title": "Book Wyrm",
     "draft": true,
-    "meta": "Vite JS · Unity 2D · Retro · 2026",
+    "meta": "Vite · TypeScript · Retro · 2026",
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
-    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/screenshots/bookwyrm_playfield.png",
-    "secret": true,
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
+    "screenshot": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/screenshots/bookwyrm_playfield.png",
     "gif": "",
+    "credits": [
+      "Elan",
+      "Max"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/lexwright/"
     }
   },
   {
     "title": "250 is...",
-    "draft": true,
     "meta": "Unity 2D · Trivia · 2026",
     "status": "In Development",
     "description": "As our Nation turns 250, what does this number even mean? A number trivia game.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/250is_thumbnail.png",
-    "secret": false,
     "gif": "",
     "jam": {
       "label": "JAM",
@@ -50,13 +57,34 @@
     }
   },
   {
+    "title": "Sumo Square",
+    "draft": true,
+    "meta": "Unity 2D · 2026",
+    "status": "In Development",
+    "image": "",
+    "gif": "",
+    "credits": [
+      "Elan",
+      "Max",
+      "Ryan",
+      "Andrew"
+    ],
+    "links": {}
+  },
+  {
     "title": "Katami",
     "meta": "Unity 2D",
     "status": "In Development",
     "description": "A puzzle game about folding paper.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
-    "secret": false,
     "gif": "",
+    "credits": [
+      "Max",
+      "Ryan",
+      "AnglerFishArt",
+      "hutthutthutt",
+      "Mafgar"
+    ],
     "links": {
       "steam": "https://store.steampowered.com/app/3828230/KATAMI_A_Paper_Story/"
     }
@@ -67,12 +95,17 @@
     "status": "Released",
     "description": "Infiltrate a bizarre, masked cult.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/masknum_thumbnail.png",
-    "secret": false,
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mask.gif",
     "jam": {
       "label": "JAM",
       "logo": "images/jams/masknum-opus.png"
     },
+    "credits": [
+      "Elan",
+      "Michael",
+      "Ryan",
+      "Max"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/masknum-opus/",
       "itch": "https://elanmakesgames.itch.io/mask"
@@ -84,12 +117,15 @@
     "status": "Released",
     "description": "Explore a mysterious field.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/molith_thumbnail.png",
-    "secret": false,
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mono.gif",
     "jam": {
       "label": "JAM",
       "logo": "images/jams/molith.png"
     },
+    "credits": [
+      "Elan",
+      "Max"
+    ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/molith/",
       "itch": "https://elanmakesgames.itch.io/molith"

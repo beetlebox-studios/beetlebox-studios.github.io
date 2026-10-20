@@ -4,20 +4,13 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, status, description, image, secret, gif, jam: { label, logo }, credits: ["Name", …],
+//   { title, meta, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …],
 //     links: { play, itch, steam, trailer, github } }
-//
-// The game card's filter button cross-references the team network (team.js)
-// by name via the shared GRID_REGISTRY.
 
 // ── Shared state ─────────────────────────────────────────────────────────────
 
 // Maps grid-id → array of { item, cardEl } after each grid loads.
 const GRID_REGISTRY = {};
-
-// Active filter state
-let activeFilter    = null;  // game title string, or null for "show all"
-let activeFilterBtn = null;  // the DOM button that set the active filter
 
 // ── CardGrid class ────────────────────────────────────────────────────────────
 
@@ -57,73 +50,6 @@ class CardGrid {
   }
 }
 
-// ── Filter logic ──────────────────────────────────────────────────────────────
-
-function applyFilter(gameTitle, credits, btn) {
-  const peopleEntries = GRID_REGISTRY['people-grid'];
-  if (!peopleEntries) return;
-
-  const creditSet = new Set((credits ?? []).map(n => n.toLowerCase()));
-  const isFilterOn = !!gameTitle;
-
-  // Reset the previously active button before updating state
-  if (activeFilterBtn) {
-    activeFilterBtn.classList.remove('game-filter-btn--active');
-    activeFilterBtn = null;
-  }
-
-  activeFilter = gameTitle ?? null;
-
-  // Mark the new button active (if there is one)
-  if (isFilterOn && btn) {
-    btn.classList.add('game-filter-btn--active');
-    activeFilterBtn = btn;
-  }
-
-  const peopleGrid = document.getElementById('people-grid');
-  peopleGrid.classList.toggle('people-grid--filtered', isFilterOn);
-
-  peopleEntries.forEach(({ item, card }) => {
-    const match = !isFilterOn || creditSet.has(item.name.toLowerCase());
-    card.classList.toggle('person-card--hidden', !match);
-  });
-
-  updateFilterBanner(gameTitle);
-
-  if (isFilterOn) {
-    document.getElementById('people')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
-
-function updateFilterBanner(gameTitle) {
-  const existing = document.getElementById('people-filter-banner');
-
-  if (!gameTitle) {
-    existing?.remove();
-    return;
-  }
-
-  const banner = existing ?? (() => {
-    const b = el('div', 'people-filter-banner');
-    b.id = 'people-filter-banner';
-    const section = document.getElementById('people');
-    section.querySelector('.section-inner')?.prepend(b);
-    return b;
-  })();
-
-  banner.innerHTML = '';
-
-  const label = el('span', 'people-filter-label');
-  label.textContent = `Filtered: ${gameTitle}`;
-  banner.appendChild(label);
-
-  const clearBtn = el('button', 'people-filter-clear');
-  clearBtn.setAttribute('aria-label', 'Clear filter');
-  clearBtn.innerHTML = '<i class="fa-solid fa-xmark"></i> Show all';
-  clearBtn.addEventListener('click', () => applyFilter(null, null, null));
-  banner.appendChild(clearBtn);
-}
-
 // ── Card type definitions ─────────────────────────────────────────────────────
 
 const CARD_TYPES = {
@@ -139,7 +65,10 @@ const CARD_TYPES = {
 
       // Static thumbnail — always present as the base layer
       if (item.image) {
-        imgWrap.appendChild(makeImg(item.image, item.title, item.secret ? 'work-img work-img--secret' : 'work-img'));
+        imgWrap.appendChild(makeImg(item.image, item.title, item.draft ? 'work-img work-img--draft' : 'work-img'));
+      }
+      if (item.draft && item.screenshot) {
+        imgWrap.appendChild(makeImg(item.screenshot, item.title, 'work-img work-shot'));
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
 
@@ -147,7 +76,7 @@ const CARD_TYPES = {
       // src is left empty and only assigned on mouseenter so the GIF
       // starts from frame 1 each time (browsers restart a GIF when src is set).
       // On mouseleave src is cleared, stopping playback and freeing memory.
-      if (item.gif && !item.secret) {
+      if (item.gif && !item.draft) {
         const gifEl = makeImg('', item.title, 'work-gif');
         gifEl.setAttribute('aria-hidden', 'true');
         card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
@@ -155,25 +84,12 @@ const CARD_TYPES = {
         imgWrap.appendChild(gifEl);
       }
 
-      // ── Overlay buttons (top-right of image): team filter
-      const btnWrap = el('div', 'game-img-btns');
-
-      if (Array.isArray(item.credits)) {
-        const filterBtn = el('button', 'game-img-btn');
-        filterBtn.setAttribute('aria-label', `Filter team by ${item.title}`);
-        filterBtn.innerHTML = '<i class="fa-solid fa-users"></i>';
-        filterBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (activeFilter === item.title) {
-            applyFilter(null, null, null);
-          } else {
-            applyFilter(item.title, item.credits, filterBtn);
-          }
-        });
-        btnWrap.appendChild(filterBtn);
-      }
-
-      if (btnWrap.children.length) imgWrap.appendChild(btnWrap);
+      card.addEventListener('mouseenter', () => {
+        window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ?? null }));
+      });
+      card.addEventListener('mouseleave', () => {
+        window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
+      });
 
       // ── Jam badge (bottom-right fade) — jam logo image if provided, else label text
       if (item.jam) {
