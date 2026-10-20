@@ -45,6 +45,14 @@
     }
   },
   {
+    "name": "Andrew",
+    "role": "Artist",
+    "bio": "bio text goes here",
+    "image": "",
+    "founder": false,
+    "links": {}
+  },
+  {
     "name": "Michael",
     "role": "Game designer",
     "bio": "bio text goes here",

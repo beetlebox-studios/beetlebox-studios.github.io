@@ -755,9 +755,11 @@ html.admin .admin-only { display: revert !important; }
   color: #fff;
 }
 .work-jam-logo {
+  height: 2.5rem;
+  width: auto;
   max-width: 70%;
-  max-height: 40%;
   object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 
 .work-meta {
