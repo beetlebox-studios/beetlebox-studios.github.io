@@ -18,9 +18,13 @@
   // Tuning
   const DECOR_SPACING = 56;   // px — min distance between decor nodes
   const DECOR_K       = 3;    // edges from each decor node to its k nearest
-  const DEV_K         = 4;    // edges from each dev node to its k nearest decor nodes
+  const DEV_K         = 3;    // edges from each dev node to its k nearest decor nodes
   const DECOR_R       = 2.2;  // px — decor node radius
   const SEED          = 1337; // fixed seed → same web every load
+  const DRIFT         = 10;
+  const EASE          = 0.12;
+  const FADE          = 36;
+  const GAP           = 10;
 
   const LINK_DEFS = [
     { key: 'personal',   icon: 'fa-solid fa-globe',       label: 'Personal site' },
@@ -37,7 +41,24 @@
   svg.setAttribute('aria-hidden', 'true');
   container.appendChild(svg);
 
-  let devs = []; // [{ item, node }]
+  let devs = [];
+  let decor = [];
+  let decorEdges = [];
+  let devLines = [];
+  let focus = null;
+  let size = 72;
+  let snap = true;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const edgeLayer = document.createElementNS(SVG_NS, 'g');
+  const nodeLayer = document.createElementNS(SVG_NS, 'g');
+  svg.append(edgeLayer, nodeLayer);
+
+  function svgEl(tag, cls) {
+    const e = document.createElementNS(SVG_NS, tag);
+    e.setAttribute('class', cls);
+    return e;
+  }
 
   // ── Seeded RNG (mulberry32) ────────────────────────────────────────────────
   function rng(seed) {
@@ -74,7 +95,7 @@
 
   // ── Dev node DOM ───────────────────────────────────────────────────────────
   function buildDevNode(item) {
-    const node = el('div', item.founder ? 'team-node team-node--founder' : 'team-node');
+    const node = el('div', 'team-node');
 
     const circle = el('div', 'team-node-circle');
     if (item.image) {
@@ -83,14 +104,6 @@
       circle.appendChild(monogram(item.name));
     }
     node.appendChild(circle);
-
-    if (item.founder) {
-      const badge = el('span', 'team-node-founder');
-      badge.title = 'Founding member';
-      badge.setAttribute('aria-label', 'Founding member');
-      badge.innerHTML = '<i class="fa-solid fa-star"></i>';
-      node.appendChild(badge);
-    }
 
     const label = el('div', 'team-node-label');
     label.appendChild(text('p', 'team-node-name', item.name));
@@ -115,67 +128,201 @@
   }
 
   // ── Layout + web ───────────────────────────────────────────────────────────
-  function layout() {
+  function buildWeb() {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    edgeLayer.replaceChildren();
+    nodeLayer.replaceChildren();
+    const rand = rng(SEED);
+    decor = poisson(w, h, DECOR_SPACING, () => false, rand).map(p => ({
+      bx: p.x, by: p.y, x: p.x, y: p.y, a: 1,
+      px: rand() * Math.PI * 2, py: rand() * Math.PI * 2,
+      fx: 0.00035 + rand() * 0.0004, fy: 0.00035 + rand() * 0.0004,
+      el: nodeLayer.appendChild(svgEl('circle', 'team-web-node')),
+    }));
+    decor.forEach(d => d.el.setAttribute('r', DECOR_R));
+
+    const seen = new Set();
+    const maxLen = DECOR_SPACING * 2.5;
+    decorEdges = [];
+    decor.forEach((p, i) => nearest({ x: p.bx, y: p.by }, decor.map(q => ({ x: q.bx, y: q.by })), DECOR_K, i).forEach(j => {
+      const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const len = Math.hypot(p.bx - decor[j].bx, p.by - decor[j].by);
+      decorEdges.push({ a: p, b: decor[j], base: Math.max(0.12, 0.5 * (1 - len / maxLen)),
+        el: edgeLayer.appendChild(svgEl('line', 'team-web-edge')) });
+    }));
+
+    devLines = devs.flatMap(() => Array.from({ length: DEV_K }, () =>
+      edgeLayer.appendChild(svgEl('line', 'team-web-edge team-web-edge--dev'))));
+  }
+
+  function slots(n, w, h, s, cellW, labelH, k) {
+    const cx = w / 2;
+    const cy = h / 2 - labelH / 2;
+    const rx = Math.max(0, w / 2 - cellW / 2 - 12);
+    const ry = Math.max(0, h / 2 - s / 2 - labelH - 12);
+    if (n === 1) return [{ x: cx, y: cy }];
+    if (n === 2) {
+      const d = Math.min(rx, (cellW + GAP * 4) * k);
+      return [{ x: cx - d, y: cy }, { x: cx + d, y: cy }];
+    }
+    return Array.from({ length: n }, (_, i) => {
+      const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+      return { x: cx + Math.cos(a) * rx * k, y: cy + Math.sin(a) * ry * k };
+    });
+  }
+
+  function grid(n, w, h, cols) {
+    const rows = Math.ceil(n / cols);
+    const pts = [];
+    for (let r = 0; r < rows; r++) {
+      const inRow = Math.min(cols, n - r * cols);
+      for (let c = 0; c < inRow; c++) {
+        pts.push({ x: (w / cols) * (c + 0.5 + (cols - inRow) / 2), y: (h / rows) * (r + 0.42) });
+      }
+    }
+    return pts;
+  }
+
+  function box(p, s, d) {
+    const half = Math.max(s, d.w) / 2 + GAP / 2;
+    return { l: p.x - half, r: p.x + half, t: p.y - s / 2 - GAP / 2, b: p.y + s / 2 + 6 + d.h + GAP / 2 };
+  }
+
+  function fits(pts, s, shown, w, h) {
+    const boxes = pts.map((p, i) => box(p, s, shown[i]));
+    for (let i = 0; i < boxes.length; i++) {
+      const a = boxes[i];
+      if (a.l < 0 || a.t < 0 || a.r > w || a.b > h) return false;
+      for (let j = i + 1; j < boxes.length; j++) {
+        const b = boxes[j];
+        if (a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b) return false;
+      }
+    }
+    return true;
+  }
+
+  function arrange() {
     const w = container.clientWidth;
     const h = container.clientHeight;
     if (!w || !h || !devs.length) return;
 
-    // Dev node size scales with the panel; ring leaves room for labels below
-    const size   = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
-    const labelH = 40;
-    const cx = w / 2;
-    const cy = h / 2 - labelH / 4;
-    const radius = Math.max(0, Math.min(w / 2 - size * 0.9, h / 2 - size / 2 - labelH));
+    let shown = devs.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
+    if (!shown.length) shown = devs;
+    devs.forEach(d => { d.ta = shown.includes(d) ? 1 : 0; });
 
+    const base = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
+    shown.forEach(d => { d.w = d.label.offsetWidth; d.h = d.label.offsetHeight - d.links; });
+    const cellW = Math.max(...shown.map(d => d.w));
+    const labelH = Math.max(...shown.map(d => d.h));
+    const sizes = [];
+    for (let s = base; s >= 44; s -= 4) sizes.push(s);
+    let best = null;
+    for (const s of sizes) {
+      for (let k = Math.min(1, 0.35 + 0.1 * shown.length); k <= 1.001 && !best; k += 0.05) {
+        const pts = slots(shown.length, w, h, s, Math.max(s, cellW), labelH, k);
+        if (fits(pts, s, shown, w, h)) best = { s, pts };
+      }
+      if (best) break;
+    }
+    for (const s of [...sizes, 40, 36]) {
+      for (let cols = 2; cols < shown.length && !best; cols++) {
+        const pts = grid(shown.length, w, h, cols);
+        if (fits(pts, s, shown, w, h)) best = { s, pts };
+      }
+      if (best) break;
+    }
+    if (!best) best = { s: 36, pts: slots(shown.length, w, h, 36, Math.max(36, cellW), labelH, 1) };
+    size = best.s;
     container.style.setProperty('--node-size', `${size}px`);
+    shown.forEach((d, i) => { d.tx = best.pts[i].x; d.ty = best.pts[i].y; });
+    devs.forEach(d => {
+      if (d.tx === undefined) { d.tx = w / 2; d.ty = h / 2; }
+      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; }
+    });
+    snap = false;
+  }
 
-    const devPts = devs.map((d, i) => {
-      const a = -Math.PI / 2 + (i / devs.length) * Math.PI * 2;
-      const p = { x: cx + Math.cos(a) * radius, y: cy + Math.sin(a) * radius };
-      d.node.style.left = `${p.x - size / 2}px`;
-      d.node.style.top  = `${p.y - size / 2}px`;
-      return p;
+  function nearDev(p) {
+    let a = 1;
+    devs.forEach(d => {
+      if (d.a < 0.01) return;
+      const b = box(d, size, d);
+      const dx = Math.max(b.l - p.x, 0, p.x - b.r);
+      const dy = Math.max(b.t - p.y, 0, p.y - b.b);
+      const fade = Math.min(1, Math.hypot(dx, dy) / FADE);
+      a = Math.min(a, 1 - d.a * (1 - fade));
+    });
+    return a;
+  }
+
+  function tick(t) {
+    const drift = reduceMotion.matches ? 0 : DRIFT;
+    devs.forEach(d => {
+      d.x += (d.tx - d.x) * EASE;
+      d.y += (d.ty - d.y) * EASE;
+      d.a += (d.ta - d.a) * EASE;
+      d.node.style.left = `${d.x - size / 2}px`;
+      d.node.style.top = `${d.y - size / 2}px`;
+      const settled = d.a > 0.995;
+      d.node.style.opacity = settled ? '' : d.a.toFixed(3);
+      d.node.style.scale = settled ? '' : (0.7 + 0.3 * d.a).toFixed(3);
+      d.node.classList.toggle('team-node--out', d.ta === 0);
     });
 
-    // Decor nodes avoid dev circles and their labels
-    const clear  = size / 2 + 10;
-    const clearX = Math.max(clear, 60); // labels are wider than the circle
-    const blocked = p => devPts.some(d =>
-      Math.abs(p.x - d.x) < clearX && p.y > d.y - clear && p.y < d.y + clear + labelH);
-    const decor = poisson(w, h, DECOR_SPACING, blocked, rng(SEED));
-
-    // Edges (deduped) — decor↔decor k-nearest, dev→decor k-nearest
-    const edges = new Map();
-    const addEdge = (a, b, kind) => {
-      const key = a.x < b.x || (a.x === b.x && a.y < b.y)
-        ? `${a.x},${a.y}|${b.x},${b.y}` : `${b.x},${b.y}|${a.x},${a.y}`;
-      if (!edges.has(key)) edges.set(key, { a, b, kind });
-    };
-    decor.forEach((p, i) => nearest(p, decor, DECOR_K, i).forEach(j => addEdge(p, decor[j], 'decor')));
-    devPts.forEach(p => nearest(p, decor, DEV_K).forEach(j => addEdge(p, decor[j], 'dev')));
-    const founderPts = devPts.filter((p, i) => devs[i].item.founder);
-    founderPts.slice(1).forEach((p, i) => addEdge(founderPts[i], p, 'founder'));
-
-    // Render SVG
-    const maxLen = DECOR_SPACING * 2.5;
-    let out = '';
-    edges.forEach(({ a, b, kind }) => {
-      const len = Math.hypot(a.x - b.x, a.y - b.y);
-      const alpha = kind === 'founder' ? 0.9 : kind === 'dev' ? 0.55 : Math.max(0.12, 0.5 * (1 - len / maxLen));
-      out += `<line class="team-web-edge team-web-edge--${kind}" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" style="opacity:${alpha.toFixed(2)}"/>`;
-    });
     decor.forEach(p => {
-      out += `<circle class="team-web-node" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${DECOR_R}"/>`;
+      p.x = p.bx + Math.sin(t * p.fx + p.px) * drift;
+      p.y = p.by + Math.cos(t * p.fy + p.py) * drift;
+      p.a = nearDev(p);
+      p.el.setAttribute('cx', p.x.toFixed(1));
+      p.el.setAttribute('cy', p.y.toFixed(1));
+      p.el.style.opacity = (0.7 * p.a).toFixed(3);
     });
-    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-    svg.innerHTML = out;
+
+    decorEdges.forEach(e => {
+      e.el.setAttribute('x1', e.a.x.toFixed(1));
+      e.el.setAttribute('y1', e.a.y.toFixed(1));
+      e.el.setAttribute('x2', e.b.x.toFixed(1));
+      e.el.setAttribute('y2', e.b.y.toFixed(1));
+      e.el.style.opacity = (e.base * Math.min(e.a.a, e.b.a)).toFixed(3);
+    });
+
+    const open = decor.filter(p => p.a > 0.6);
+    devs.forEach((d, i) => {
+      const ids = d.a > 0.01 ? nearest(d, open, DEV_K) : [];
+      for (let k = 0; k < DEV_K; k++) {
+        const line = devLines[i * DEV_K + k];
+        const q = open[ids[k]];
+        if (!line) continue;
+        if (!q) { line.style.opacity = 0; continue; }
+        line.setAttribute('x1', d.x.toFixed(1));
+        line.setAttribute('y1', d.y.toFixed(1));
+        line.setAttribute('x2', q.x.toFixed(1));
+        line.setAttribute('y2', q.y.toFixed(1));
+        line.style.opacity = (0.55 * d.a * q.a).toFixed(3);
+      }
+    });
+
+    requestAnimationFrame(tick);
   }
 
   let frame = 0;
   new ResizeObserver(() => {
     cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(layout);
+    frame = requestAnimationFrame(() => {
+      if (!devs.length) return;
+      buildWeb();
+      snap = true;
+      arrange();
+    });
   }).observe(container);
+
+  window.addEventListener('team:focus', e => {
+    focus = e.detail?.length ? new Set(e.detail.map(n => n.toLowerCase())) : null;
+    arrange();
+  });
 
   // ── Load people ────────────────────────────────────────────────────────────
   (async () => {
@@ -188,15 +335,16 @@
       return;
     }
 
-    GRID_REGISTRY['people-grid'] = [];
     devs = items.map((item, i) => {
       const node = buildDevNode(item);
       node.style.setProperty('--delay', `${i * 60}ms`);
       container.appendChild(node);
-      // `card` key lets the game-card credit filter (cards.js) dim nodes
-      GRID_REGISTRY['people-grid'].push({ item, card: node });
-      return { item, node };
+      const links = node.querySelector('.team-node-links');
+      return { item, node, label: node.querySelector('.team-node-label'),
+        links: links ? links.offsetHeight + parseFloat(getComputedStyle(links).marginTop) : 0, x: 0, y: 0, a: 0, ta: 1 };
     });
-    layout();
+    buildWeb();
+    arrange();
+    requestAnimationFrame(tick);
   })();
 })();
