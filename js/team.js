@@ -74,7 +74,7 @@
 
   // ── Dev node DOM ───────────────────────────────────────────────────────────
   function buildDevNode(item) {
-    const node = el('div', 'team-node');
+    const node = el('div', item.founder ? 'team-node team-node--founder' : 'team-node');
 
     const circle = el('div', 'team-node-circle');
     if (item.image) {
@@ -83,6 +83,14 @@
       circle.appendChild(monogram(item.name));
     }
     node.appendChild(circle);
+
+    if (item.founder) {
+      const badge = el('span', 'team-node-founder');
+      badge.title = 'Founding member';
+      badge.setAttribute('aria-label', 'Founding member');
+      badge.innerHTML = '<i class="fa-solid fa-star"></i>';
+      node.appendChild(badge);
+    }
 
     const label = el('div', 'team-node-label');
     label.appendChild(text('p', 'team-node-name', item.name));
@@ -145,13 +153,15 @@
     };
     decor.forEach((p, i) => nearest(p, decor, DECOR_K, i).forEach(j => addEdge(p, decor[j], 'decor')));
     devPts.forEach(p => nearest(p, decor, DEV_K).forEach(j => addEdge(p, decor[j], 'dev')));
+    const founderPts = devPts.filter((p, i) => devs[i].item.founder);
+    founderPts.slice(1).forEach((p, i) => addEdge(founderPts[i], p, 'founder'));
 
     // Render SVG
     const maxLen = DECOR_SPACING * 2.5;
     let out = '';
     edges.forEach(({ a, b, kind }) => {
       const len = Math.hypot(a.x - b.x, a.y - b.y);
-      const alpha = kind === 'dev' ? 0.55 : Math.max(0.12, 0.5 * (1 - len / maxLen));
+      const alpha = kind === 'founder' ? 0.9 : kind === 'dev' ? 0.55 : Math.max(0.12, 0.5 * (1 - len / maxLen));
       out += `<line class="team-web-edge team-web-edge--${kind}" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" style="opacity:${alpha.toFixed(2)}"/>`;
     });
     decor.forEach(p => {

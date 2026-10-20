@@ -507,7 +507,7 @@ mark.search-hl.search-hl--current {
 
 .work-img-wrap {
   position: relative;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1058 / 496;
   overflow: hidden;
   border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
   background: oklch(0.18 0.02 var(--hue));
@@ -524,10 +524,13 @@ mark.search-hl.search-hl--current {
   transition: opacity 0.3s, transform 0.5s var(--ease);
 }
 .work-img[src]:not([src=""]) { opacity: 1; }
-/* "blur": true in games.json — soften the thumbnail (e.g. early WIP art) */
-.work-img--blur { filter: blur(8px); transform: scale(1.12); }
-.work-card:hover .work-img.work-img--blur { transform: scale(1.16); } /* oversized so blurred edges stay hidden */
+.work-img--secret {
+  filter: blur(8px);
+  transform: scale(1.12);
+  transition: opacity 0.3s, filter 0.4s var(--ease), transform 0.5s var(--ease);
+}
 .work-card:hover .work-img { transform: scale(1.04); }
+.work-card:hover .work-img.work-img--secret { filter: blur(0); transform: scale(1.04); }
 
 /* GIF preview — stacked above the static thumbnail */
 .work-gif {
@@ -805,6 +808,36 @@ mark.search-hl.search-hl--current {
   color: oklch(0.8 0.14 80);
   background: color-mix(in oklch, oklch(0.8 0.14 80) 10%, transparent);
   border-color: color-mix(in oklch, oklch(0.8 0.14 80) 25%, transparent);
+}
+
+.work-status[data-status="draft"] {
+  color: oklch(0.72 0.16 330);
+  background: color-mix(in oklch, oklch(0.72 0.16 330) 10%, transparent);
+  border-color: color-mix(in oklch, oklch(0.72 0.16 330) 25%, transparent);
+}
+.work-draft-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 3;
+  background: oklch(0.2 0.03 330 / 0.85);
+}
+.is-draft {
+  outline: 1px dashed oklch(0.72 0.16 330);
+  outline-offset: 3px;
+}
+.admin-only { display: none !important; }
+html.admin .admin-only { display: revert !important; }
+.admin-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  margin-right: 0.25rem;
+  border-radius: 999px;
+  color: oklch(0.72 0.16 330);
+  border: 1px solid color-mix(in oklch, oklch(0.72 0.16 330) 35%, transparent);
 }
 
 /* Jam badge — black fade from the image's bottom-right corner */
@@ -1381,9 +1414,8 @@ body {
 .footer-inner { justify-content: center; }
 
 /* Compact game cards: image fills the cell, one-line info below */
-.work-grid { grid-template-rows: repeat(3, minmax(0, 1fr)); height: 100%; gap: 0.75rem; }
-.work-card { display: flex; flex-direction: column; min-height: 0; }
-.work-img-wrap { flex: 1; min-height: 0; aspect-ratio: auto; }
+.work-grid { align-content: start; height: 100%; overflow-y: auto; gap: 0.75rem; }
+.work-card { display: flex; flex-direction: column; }
 .work-info { padding: 0.5rem 0.75rem 0.6rem; }
 .work-title-row { margin-bottom: 0.15rem; }
 .work-title,
@@ -1397,8 +1429,7 @@ body {
 
 @media (max-width: 900px) {
   #page { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
-  .work-grid { grid-template-rows: none; height: auto; }
-  .work-img-wrap { flex: none; aspect-ratio: 16 / 9; }
+  .work-grid { height: auto; overflow-y: visible; }
   #people .section-inner { height: 600px; }
 }
 
@@ -1433,6 +1464,11 @@ body {
 }
 .team-web-edge--dev {
   stroke: var(--primary);
+}
+.team-web-edge--founder {
+  stroke: oklch(0.8 0.14 80);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
 }
 .team-web-node {
   fill: color-mix(in oklch, var(--primary) 70%, var(--text));
@@ -1538,6 +1574,26 @@ body {
 }
 
 /* Dimmed by the game-card credit filter (cards.js) */
+.team-node--founder .team-node-circle {
+  border-color: oklch(0.8 0.14 80);
+}
+.team-node-founder {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 3;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  color: var(--page-bg);
+  background: oklch(0.8 0.14 80);
+  box-shadow: 0 0 0 2px var(--page-bg);
+  pointer-events: none;
+}
 .team-node.person-card--hidden {
   opacity: 0.2;
   filter: grayscale(0.6);

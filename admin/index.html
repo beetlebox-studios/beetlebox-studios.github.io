@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="robots" content="noindex" />
+  <title>BeetleBox Studios · Admin</title>
+  <script>
+    fetch('../index.html')
+      .then(r => r.text())
+      .then(html => {
+        document.open();
+        document.write(html.replace('<head>', '<head>\n  <base href="../" />\n  <meta name="robots" content="noindex" />'));
+        document.close();
+      });
+  </script>
+</head>
+<body></body>
+</html>

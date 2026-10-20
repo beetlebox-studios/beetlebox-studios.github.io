@@ -1,5 +1,12 @@
 // main.js — shared utilities
 
+const ADMIN_MODE = /^\/admin(\/|$)/.test(location.pathname);
+document.documentElement.classList.toggle('admin', ADMIN_MODE);
+
+function isVisible(item) {
+  return ADMIN_MODE || !item.draft;
+}
+
 // Close all navbar panels except the one with the given id
 function closeOtherPanels(exceptId) {
   if (exceptId !== 'lang-wrap')        document.getElementById('lang-wrap')?.classList.remove('lang-open');
