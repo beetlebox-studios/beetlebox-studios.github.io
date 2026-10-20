@@ -4,8 +4,8 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, status, description, image, blur, gif, jam: { label, logo }, credits: ["Name", …],
-//     links: { play, link, itch, trailer } }
+//   { title, meta, status, description, image, secret, gif, jam: { label, logo }, credits: ["Name", …],
+//     links: { play, itch, steam, trailer, github } }
 //
 // The game card's filter button cross-references the team network (team.js)
 // by name via the shared GRID_REGISTRY.
@@ -48,8 +48,9 @@ class CardGrid {
     // Register entries so other grids can look them up
     GRID_REGISTRY[this.target] = [];
 
-    items.forEach((item, i) => {
+    items.filter(isVisible).forEach((item, i) => {
       const card = def.buildCard(item, i);
+      if (item.draft) card.classList.add('is-draft');
       GRID_REGISTRY[this.target].push({ item, card });
       grid.appendChild(card);
     });
@@ -138,7 +139,7 @@ const CARD_TYPES = {
 
       // Static thumbnail — always present as the base layer
       if (item.image) {
-        imgWrap.appendChild(makeImg(item.image, item.title, item.blur ? 'work-img work-img--blur' : 'work-img'));
+        imgWrap.appendChild(makeImg(item.image, item.title, item.secret ? 'work-img work-img--secret' : 'work-img'));
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
 
@@ -146,7 +147,7 @@ const CARD_TYPES = {
       // src is left empty and only assigned on mouseenter so the GIF
       // starts from frame 1 each time (browsers restart a GIF when src is set).
       // On mouseleave src is cleared, stopping playback and freeing memory.
-      if (item.gif) {
+      if (item.gif && !item.secret) {
         const gifEl = makeImg('', item.title, 'work-gif');
         gifEl.setAttribute('aria-hidden', 'true');
         card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
@@ -177,12 +178,21 @@ const CARD_TYPES = {
       // ── Jam badge (bottom-right fade) — jam logo image if provided, else label text
       if (item.jam) {
         const badge = el('div', 'work-jam-badge');
+        const label = text('span', 'work-jam-label', item.jam.label || 'JAM');
         if (item.jam.logo) {
-          badge.appendChild(makeImg(item.jam.logo, item.jam.label || 'Jam', 'work-jam-logo'));
+          const logo = makeImg(item.jam.logo, item.jam.label || 'Jam', 'work-jam-logo');
+          logo.addEventListener('error', () => logo.replaceWith(label));
+          badge.appendChild(logo);
         } else {
-          badge.appendChild(text('span', 'work-jam-label', item.jam.label || 'JAM'));
+          badge.appendChild(label);
         }
         imgWrap.appendChild(badge);
+      }
+
+      if (item.draft) {
+        const draft = text('span', 'work-status work-draft-badge', 'Draft');
+        draft.dataset.status = 'draft';
+        imgWrap.appendChild(draft);
       }
 
       // ── Info
@@ -203,13 +213,14 @@ const CARD_TYPES = {
       // Playable in the browser — whole card opens the game page
       if (item.links?.play) {
         info.appendChild(playLink(item, 'work-play'));
-        card.addEventListener('click', () => { location.href = item.links.play; });
+      }
+      const target = item.links?.itch || item.links?.steam || item.links?.play;
+      if (target) {
+        card.addEventListener('click', () => { location.href = target; });
       }
 
       const linkDefs = [
-        { key: 'itch',    icon: 'fa-brands fa-itch-io',  label: 'itch.io' },
         { key: 'trailer', icon: 'fa-brands fa-youtube',  label: 'Trailer' },
-        { key: 'steam',   icon: 'fa-brands fa-steam',    label: 'Steam' },
         { key: 'github',  icon: 'fa-brands fa-github',   label: 'GitHub' },
       ];
       const linksEl = buildLinks(item.links, linkDefs, 'work-links');
@@ -278,6 +289,7 @@ function buildLinks(links, defs, className) {
     a.rel    = 'noopener';
     a.setAttribute('aria-label', label);
     a.innerHTML = `<i class="${icon}"></i>`;
+    a.addEventListener('click', e => e.stopPropagation());
     wrap.appendChild(a);
   });
   return wrap;
