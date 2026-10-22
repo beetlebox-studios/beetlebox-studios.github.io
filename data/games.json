@@ -52,15 +52,28 @@
       "Ryan",
       "Ako"
     ],
+    "roles": {
+      "Elan": [
+        "Programmer"
+      ],
+      "Max": [
+        "Game Designer"
+      ],
+      "Drew": [
+        "Artist"
+      ],
+      "Ryan": [
+        "Support"
+      ]
+    },
     "links": {
       "itch": "https://elanmakesgames.itch.io/250"
     }
   },
   {
     "title": "Sumo Square",
-    "draft": true,
     "meta": "Unity 2D · 2026",
-    "status": "In Development",
+    "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
     "gif": "",
     "jam": {
@@ -73,7 +86,9 @@
       "Ryan",
       "Andrew"
     ],
-    "links": {}
+    "links": {
+      "itch": "https://elanmakesgames.itch.io/sumo-square"
+    }
   },
   {
     "title": "Katami",
@@ -95,10 +110,9 @@
   },
   {
     "title": "Learn to Count",
-    "draft": true,
     "meta": "Jam game",
     "status": "Released",
-    "image": "",
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
     "gif": "",
     "jam": {
       "label": "GMTK",
