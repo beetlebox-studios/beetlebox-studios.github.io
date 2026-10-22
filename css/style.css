@@ -1372,7 +1372,7 @@ body {
   background: var(--card-bg);
   border: 1px solid color-mix(in oklch, var(--primary) 45%, transparent);
   box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), var(--shadow);
-  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+  transition: border-color 0.35s var(--ease), box-shadow 0.35s var(--ease), transform 0.35s var(--ease);
 }
 .team-node:hover .team-node-circle {
   border-color: var(--primary);
@@ -1429,6 +1429,15 @@ body {
 .team-node:hover .team-node-label { z-index: 5; }
 .team-node:hover .team-node-circle { z-index: 6; }
 .team-node--out { pointer-events: none; }
+.team-node--focus .team-node-circle {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent),
+              0 0 0 6px color-mix(in oklch, var(--primary) 35%, transparent),
+              0 0 26px color-mix(in oklch, var(--primary) 55%, transparent);
+  transform: scale(1.08);
+}
+.team-node--focus .team-node-name { color: var(--primary); }
+.team-node-name { transition: color 0.3s var(--ease); }
 .team-node:hover .team-node-links {
   opacity: 1;
   transform: none;

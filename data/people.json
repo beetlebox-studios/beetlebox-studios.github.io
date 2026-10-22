@@ -92,5 +92,15 @@
       "itch": "https://hutt3.itch.io/",
       "youtube": "https://www.youtube.com/@hutthutthutt7321"
     }
+  },
+  {
+    "name": "Enchae",
+    "role": "Collaborator",
+    "bio": "bio text goes here",
+    "image": "",
+    "founder": false,
+    "links": {
+      "itch": "https://enchae.itch.io/"
+    }
   }
 ]

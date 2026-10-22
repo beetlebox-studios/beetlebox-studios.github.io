@@ -22,7 +22,10 @@
   const DECOR_R       = 2.2;  // px — decor node radius
   const SEED          = 1337; // fixed seed → same web every load
   const DRIFT         = 10;
-  const EASE          = 0.12;
+  const SPRING        = 34;
+  const DAMP          = 2 * Math.sqrt(SPRING);
+  const FADE_RATE     = 7;
+  const RELEASE_MS    = 160;
   const FADE          = 36;
   const GAP           = 10;
 
@@ -48,6 +51,8 @@
   let focus = null;
   let size = 72;
   let snap = true;
+  let last = 0;
+  let release = 0;
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const edgeLayer = document.createElementNS(SVG_NS, 'g');
@@ -211,7 +216,10 @@
 
     let shown = devs.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
     if (!shown.length) shown = devs;
-    devs.forEach(d => { d.ta = shown.includes(d) ? 1 : 0; });
+    devs.forEach(d => {
+      d.ta = shown.includes(d) ? 1 : 0;
+      d.node.classList.toggle('team-node--focus', !!focus && d.ta === 1);
+    });
 
     const base = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
     shown.forEach(d => { d.w = d.label.offsetWidth; d.h = d.label.offsetHeight - d.links; });
@@ -240,7 +248,17 @@
     shown.forEach((d, i) => { d.tx = best.pts[i].x; d.ty = best.pts[i].y; });
     devs.forEach(d => {
       if (d.tx === undefined) { d.tx = w / 2; d.ty = h / 2; }
-      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; }
+      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; }
+    });
+    devs.forEach(d => {
+      const open = decor.filter(p => {
+        const b = box({ x: d.tx, y: d.ty }, size, d);
+        const dx = Math.max(b.l - p.bx, 0, p.bx - b.r);
+        const dy = Math.max(b.t - p.by, 0, p.by - b.b);
+        return Math.hypot(dx, dy) > FADE * 0.6;
+      });
+      d.anchors = nearest({ x: d.tx, y: d.ty }, open.map(p => ({ x: p.bx, y: p.by })), DEV_K).map(i => open[i]);
+      d.lf = snap ? 1 : 0;
     });
     snap = false;
   }
@@ -259,11 +277,17 @@
   }
 
   function tick(t) {
+    const dt = Math.min(1 / 30, last ? (t - last) / 1000 : 0);
+    last = t;
     const drift = reduceMotion.matches ? 0 : DRIFT;
+    const fade = 1 - Math.exp(-FADE_RATE * dt);
     devs.forEach(d => {
-      d.x += (d.tx - d.x) * EASE;
-      d.y += (d.ty - d.y) * EASE;
-      d.a += (d.ta - d.a) * EASE;
+      d.vx = (d.vx || 0) + (SPRING * (d.tx - d.x) - DAMP * (d.vx || 0)) * dt;
+      d.vy = (d.vy || 0) + (SPRING * (d.ty - d.y) - DAMP * (d.vy || 0)) * dt;
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      d.a += (d.ta - d.a) * fade;
+      d.lf = (d.lf ?? 1) + (1 - (d.lf ?? 1)) * fade;
       d.node.style.left = `${d.x - size / 2}px`;
       d.node.style.top = `${d.y - size / 2}px`;
       const settled = d.a > 0.995;
@@ -289,19 +313,18 @@
       e.el.style.opacity = (e.base * Math.min(e.a.a, e.b.a)).toFixed(3);
     });
 
-    const open = decor.filter(p => p.a > 0.6);
     devs.forEach((d, i) => {
-      const ids = d.a > 0.01 ? nearest(d, open, DEV_K) : [];
+      const glow = d.node.classList.contains('team-node--focus') ? 0.95 : 0.55;
       for (let k = 0; k < DEV_K; k++) {
         const line = devLines[i * DEV_K + k];
-        const q = open[ids[k]];
+        const q = d.anchors?.[k];
         if (!line) continue;
-        if (!q) { line.style.opacity = 0; continue; }
+        if (!q || d.a < 0.01) { line.style.opacity = 0; continue; }
         line.setAttribute('x1', d.x.toFixed(1));
         line.setAttribute('y1', d.y.toFixed(1));
         line.setAttribute('x2', q.x.toFixed(1));
         line.setAttribute('y2', q.y.toFixed(1));
-        line.style.opacity = (0.55 * d.a * q.a).toFixed(3);
+        line.style.opacity = (glow * d.a * d.lf * q.a).toFixed(3);
       }
     });
 
@@ -320,8 +343,10 @@
   }).observe(container);
 
   window.addEventListener('team:focus', e => {
-    focus = e.detail?.length ? new Set(e.detail.map(n => n.toLowerCase())) : null;
-    arrange();
+    clearTimeout(release);
+    const next = e.detail?.length ? new Set(e.detail.map(n => n.toLowerCase())) : null;
+    if (next) { focus = next; arrange(); return; }
+    release = setTimeout(() => { focus = null; arrange(); }, RELEASE_MS);
   });
 
   // ── Load people ────────────────────────────────────────────────────────────
