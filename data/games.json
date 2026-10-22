@@ -94,6 +94,27 @@
     }
   },
   {
+    "title": "Learn to Count",
+    "draft": true,
+    "meta": "Jam game",
+    "status": "Released",
+    "image": "",
+    "gif": "",
+    "jam": {
+      "label": "GMTK",
+      "logo": "images/jams/learn-to-count.png"
+    },
+    "credits": [
+      "Max",
+      "Ryan",
+      "Michael",
+      "Enchae"
+    ],
+    "links": {
+      "itch": "https://alphons6.itch.io/learn-to-count"
+    }
+  },
+  {
     "title": "Masknum Opus",
     "meta": "Unity 2D · Story · 2026",
     "status": "Released",
