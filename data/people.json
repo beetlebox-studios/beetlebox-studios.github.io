@@ -50,7 +50,9 @@
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
-    "links": {}
+    "links": {
+      "itch": "https://oktangy.itch.io/"
+    }
   },
   {
     "name": "Michael",
@@ -74,7 +76,7 @@
   },
   {
     "name": "Mafgar",
-    "role": "Concept Artist",
+    "role": "Musician",
     "bio": "bio text goes here",
     "image": "",
     "founder": false,

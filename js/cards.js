@@ -132,7 +132,7 @@ const CARD_TYPES = {
       }
       const target = item.links?.itch || item.links?.steam || item.links?.play;
       if (target) {
-        card.addEventListener('click', () => { location.href = target; });
+        card.addEventListener('click', () => { window.open(target, '_blank', 'noopener'); });
       }
 
       const linkDefs = [
@@ -186,6 +186,8 @@ function monogram(name) {
 function playLink(item, className) {
   const a = el('a', className);
   a.href = item.links.play;
+  a.target = '_blank';
+  a.rel = 'noopener';
   a.setAttribute('aria-label', `Play ${item.title}`);
   a.innerHTML = '<i class="fa-solid fa-play"></i><span>Play</span>';
   a.addEventListener('click', e => e.stopPropagation());
