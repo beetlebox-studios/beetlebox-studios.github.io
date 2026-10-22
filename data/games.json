@@ -63,6 +63,10 @@
     "status": "In Development",
     "image": "",
     "gif": "",
+    "jam": {
+      "label": "JAM",
+      "logo": "images/jams/sumo-square.png"
+    },
     "credits": [
       "Elan",
       "Max",
