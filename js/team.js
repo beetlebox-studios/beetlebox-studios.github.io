@@ -49,6 +49,8 @@
   let decorEdges = [];
   let devLines = [];
   let focus = null;
+  let projectRoles = {};
+  let roleOrder = [];
   let size = 72;
   let snap = true;
   let last = 0;
@@ -112,7 +114,7 @@
 
     const label = el('div', 'team-node-label');
     label.appendChild(text('p', 'team-node-name', item.name));
-    label.appendChild(text('p', 'team-node-role', item.role));
+    label.appendChild(el('div', 'team-node-roles'));
 
     const links = LINK_DEFS.filter(d => item.links?.[d.key]);
     if (links.length) {
@@ -130,6 +132,23 @@
     }
     node.appendChild(label);
     return node;
+  }
+
+  function sortRoles(roles, who) {
+    const known = (roles ?? []).filter(r => {
+      if (roleOrder.includes(r)) return true;
+      console.warn(`team: unknown role "${r}" for ${who}`);
+      return false;
+    });
+    return [...new Set(known)].sort((a, b) => roleOrder.indexOf(a) - roleOrder.indexOf(b));
+  }
+
+  function setChips(d, roles) {
+    const key = roles.join('|');
+    if (d.chips === key) return;
+    d.chips = key;
+    const row = d.label.querySelector('.team-node-roles');
+    row.replaceChildren(...roles.map(r => text('span', 'team-chip', r)));
   }
 
   // ── Layout + web ───────────────────────────────────────────────────────────
@@ -179,13 +198,15 @@
     });
   }
 
-  function grid(n, w, h, cols) {
+  function grid(n, w, h, cols, s, labelH) {
     const rows = Math.ceil(n / cols);
+    const cellH = h / rows;
+    const offset = (cellH - (s + 6 + labelH)) / 2 + s / 2;
     const pts = [];
     for (let r = 0; r < rows; r++) {
       const inRow = Math.min(cols, n - r * cols);
       for (let c = 0; c < inRow; c++) {
-        pts.push({ x: (w / cols) * (c + 0.5 + (cols - inRow) / 2), y: (h / rows) * (r + 0.42) });
+        pts.push({ x: (w / cols) * (c + 0.5 + (cols - inRow) / 2), y: cellH * r + offset });
       }
     }
     return pts;
@@ -217,6 +238,8 @@
     let shown = devs.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
     if (!shown.length) shown = devs;
     devs.forEach(d => {
+      const own = focus && projectRoles[d.item.name];
+      setChips(d, own ? sortRoles(own, d.item.name) : d.roles);
       d.ta = shown.includes(d) ? 1 : 0;
       d.node.classList.toggle('team-node--focus', !!focus && d.ta === 1);
     });
@@ -237,12 +260,15 @@
     }
     for (const s of [...sizes, 40, 36]) {
       for (let cols = 2; cols < shown.length && !best; cols++) {
-        const pts = grid(shown.length, w, h, cols);
+        const pts = grid(shown.length, w, h, cols, s, labelH);
         if (fits(pts, s, shown, w, h)) best = { s, pts };
       }
       if (best) break;
     }
-    if (!best) best = { s: 36, pts: slots(shown.length, w, h, 36, Math.max(36, cellW), labelH, 1) };
+    if (!best) {
+      const cols = Math.max(1, Math.min(shown.length, Math.floor(w / Math.max(36, cellW))));
+      best = { s: 36, pts: grid(shown.length, w, h, cols, 36, labelH) };
+    }
     size = best.s;
     container.style.setProperty('--node-size', `${size}px`);
     shown.forEach((d, i) => { d.tx = best.pts[i].x; d.ty = best.pts[i].y; });
@@ -344,19 +370,21 @@
 
   window.addEventListener('team:focus', e => {
     clearTimeout(release);
-    const next = e.detail?.length ? new Set(e.detail.map(n => n.toLowerCase())) : null;
-    if (next) { focus = next; arrange(); return; }
-    release = setTimeout(() => { focus = null; arrange(); }, RELEASE_MS);
+    const credits = e.detail?.credits;
+    const next = credits?.length ? new Set(credits.map(n => n.toLowerCase())) : null;
+    if (next) { focus = next; projectRoles = e.detail.roles ?? {}; arrange(); return; }
+    release = setTimeout(() => { focus = null; projectRoles = {}; arrange(); }, RELEASE_MS);
   });
 
   // ── Load people ────────────────────────────────────────────────────────────
   (async () => {
     let items;
     try {
-      const res = await fetch('data/people.json');
-      items = await res.json();
+      const [people, roles] = await Promise.all(['data/people.json', 'data/roles.json'].map(f => fetch(f).then(r => r.json())));
+      items = people;
+      roleOrder = roles;
     } catch (e) {
-      console.warn('team: failed to load people.json', e);
+      console.warn('team: failed to load people.json or roles.json', e);
       return;
     }
 
@@ -365,8 +393,10 @@
       node.style.setProperty('--delay', `${i * 60}ms`);
       container.appendChild(node);
       const links = node.querySelector('.team-node-links');
-      return { item, node, label: node.querySelector('.team-node-label'),
+      const d = { item, node, label: node.querySelector('.team-node-label'), roles: sortRoles(item.roles, item.name),
         links: links ? links.offsetHeight + parseFloat(getComputedStyle(links).marginTop) : 0, x: 0, y: 0, a: 0, ta: 1 };
+      setChips(d, d.roles);
+      return d;
     });
     buildWeb();
     arrange();

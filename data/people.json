@@ -1,7 +1,9 @@
 [
   {
     "name": "Elan",
-    "role": "Programmer",
+    "roles": [
+      "Programmer"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": true,
@@ -14,7 +16,10 @@
   },
   {
     "name": "Max",
-    "role": "Artist and Designer",
+    "roles": [
+      "Game Designer",
+      "Artist"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": true,
@@ -25,7 +30,9 @@
   },
   {
     "name": "Ryan",
-    "role": "Programmer",
+    "roles": [
+      "Programmer"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": true,
@@ -36,7 +43,9 @@
   },
   {
     "name": "Drew",
-    "role": "Artist",
+    "roles": [
+      "Artist"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
@@ -46,7 +55,9 @@
   },
   {
     "name": "Andrew",
-    "role": "Artist",
+    "roles": [
+      "Artist"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
@@ -56,7 +67,9 @@
   },
   {
     "name": "Michael",
-    "role": "Game designer",
+    "roles": [
+      "Game Designer"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
@@ -66,7 +79,9 @@
   },
   {
     "name": "AnglerFishArt",
-    "role": "Concept Artist",
+    "roles": [
+      "Concept Artist"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
@@ -76,7 +91,9 @@
   },
   {
     "name": "Mafgar",
-    "role": "Musician",
+    "roles": [
+      "Musician"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
@@ -86,7 +103,9 @@
   },
   {
     "name": "hutthutthutt",
-    "role": "Puzzle Designer",
+    "roles": [
+      "Puzzle Designer"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,
@@ -97,7 +116,10 @@
   },
   {
     "name": "Enchae",
-    "role": "Collaborator",
+    "roles": [
+      "Game Designer",
+      "Artist"
+    ],
     "bio": "bio text goes here",
     "image": "",
     "founder": false,

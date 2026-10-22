@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …],
+//   { title, meta, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ const CARD_TYPES = {
       }
 
       card.addEventListener('mouseenter', () => {
-        window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ?? null }));
+        window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ? { credits: item.credits, roles: item.roles ?? {} } : null }));
       });
       card.addEventListener('mouseleave', () => {
         window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
