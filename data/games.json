@@ -63,6 +63,10 @@
     "status": "In Development",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
     "gif": "",
+    "jam": {
+      "label": "JAM",
+      "logo": "images/jams/sumo-square.png"
+    },
     "credits": [
       "Elan",
       "Max",
