@@ -61,7 +61,7 @@
     "draft": true,
     "meta": "Unity 2D · 2026",
     "status": "In Development",
-    "image": "",
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
     "gif": "",
     "credits": [
       "Elan",
@@ -124,7 +124,8 @@
     },
     "credits": [
       "Elan",
-      "Max"
+      "Max",
+      "Mafgar"
     ],
     "links": {
       "play": "https://beetlebox-studios.github.io/games/molith/",
