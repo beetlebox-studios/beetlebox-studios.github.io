@@ -72,7 +72,7 @@
   },
   {
     "title": "Sumo Square",
-    "meta": "Unity 2D · 2026",
+    "meta": "Unity 2D · Party · 2026",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
     "gif": "",
@@ -92,7 +92,7 @@
   },
   {
     "title": "Katami",
-    "meta": "Unity 2D",
+    "meta": "Unity 2D · Puzzle · 2026",
     "status": "In Development",
     "description": "A puzzle game about folding paper.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
@@ -110,7 +110,7 @@
   },
   {
     "title": "Learn to Count",
-    "meta": "Jam game",
+    "meta": "Unity 2D · Educational · 2026",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
     "gif": "",
