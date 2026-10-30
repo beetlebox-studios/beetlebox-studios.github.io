@@ -21,8 +21,8 @@
   },
   {
     "title": "Book Wyrm",
-    "draft": true,
     "meta": "Vite · TypeScript · Retro · 2026",
+    "order": 3,
     "repo": "book-wyrm",
     "stack": [
       "vite"
@@ -43,6 +43,7 @@
   {
     "title": "250 is...",
     "meta": "Unity 2D · Trivia · 2026",
+    "order": 4,
     "repo": "250-is",
     "status": "In Development",
     "description": "As our Nation turns 250, what does this number even mean? A number trivia game.",
@@ -80,6 +81,7 @@
   {
     "title": "Sumo Square",
     "meta": "Unity 2D · Party · 2026",
+    "order": 1,
     "repo": "sumo-square",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
@@ -121,10 +123,8 @@
   {
     "title": "Learn to Count",
     "meta": "Unity 2D · Educational · 2026",
-    "stack": [
-      "unity",
-      "csharp"
-    ],
+    "order": 3,
+    "repo": "NumberGame",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
     "gif": "",
@@ -145,6 +145,7 @@
   {
     "title": "Masknum Opus",
     "meta": "Unity 2D · Story · 2026",
+    "order": 5,
     "repo": "masknum-opus",
     "status": "Released",
     "description": "Infiltrate a bizarre, masked cult.",
@@ -168,6 +169,7 @@
   {
     "title": "Molith",
     "meta": "Unity 3D · Exploration · 2025",
+    "order": 2,
     "repo": "Molith",
     "status": "Released",
     "description": "Explore a mysterious field.",

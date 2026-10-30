@@ -499,6 +499,14 @@ mark.search-hl.search-hl--current {
   cursor: pointer;
   overflow: hidden;
 }
+
+.work-divider {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 0.25rem 0;
+  border: 0;
+  background: var(--border-strong);
+}
 .work-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);

@@ -41,11 +41,19 @@ class CardGrid {
     // Register entries so other grids can look them up
     GRID_REGISTRY[this.target] = [];
 
-    items.filter(isVisible).sort(byOrder).forEach((item, i) => {
-      const card = def.buildCard(item, i);
-      if (item.draft) card.classList.add('is-draft');
-      GRID_REGISTRY[this.target].push({ item, card });
-      grid.appendChild(card);
+    const visible = items.filter(isVisible);
+    const groups = [visible.filter(item => !item.jam), visible.filter(item => item.jam)]
+      .map(group => group.sort(byOrder))
+      .filter(group => group.length);
+    let i = 0;
+    groups.forEach((group, g) => {
+      if (g > 0) grid.appendChild(el('hr', 'work-divider'));
+      group.forEach(item => {
+        const card = def.buildCard(item, i++);
+        if (item.draft) card.classList.add('is-draft');
+        GRID_REGISTRY[this.target].push({ item, card });
+        grid.appendChild(card);
+      });
     });
   }
 }
