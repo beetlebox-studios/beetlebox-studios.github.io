@@ -3,6 +3,10 @@
 const ADMIN_MODE = /^\/admin(\/|$)/.test(location.pathname);
 document.documentElement.classList.toggle('admin', ADMIN_MODE);
 
+function byOrder(a, b) {
+  return (a.order ?? Infinity) - (b.order ?? Infinity);
+}
+
 function isVisible(item) {
   return ADMIN_MODE || !item.draft;
 }
