@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ class CardGrid {
     // Register entries so other grids can look them up
     GRID_REGISTRY[this.target] = [];
 
-    items.filter(isVisible).forEach((item, i) => {
+    items.filter(isVisible).sort(byOrder).forEach((item, i) => {
       const card = def.buildCard(item, i);
       if (item.draft) card.classList.add('is-draft');
       GRID_REGISTRY[this.target].push({ item, card });
