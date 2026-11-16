@@ -2,6 +2,8 @@
   {
     "title": "Bubblefish",
     "meta": "Unity 2D · Retro · 2026",
+    "order": 2,
+    "repo": "BubbleFish",
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
@@ -19,8 +21,12 @@
   },
   {
     "title": "Book Wyrm",
-    "draft": true,
     "meta": "Vite · TypeScript · Retro · 2026",
+    "order": 3,
+    "repo": "book-wyrm",
+    "stack": [
+      "vite"
+    ],
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
@@ -37,6 +43,8 @@
   {
     "title": "250 is...",
     "meta": "Unity 2D · Trivia · 2026",
+    "order": 4,
+    "repo": "250-is",
     "status": "In Development",
     "description": "As our Nation turns 250, what does this number even mean? A number trivia game.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/250is_thumbnail.png",
@@ -73,6 +81,8 @@
   {
     "title": "Sumo Square",
     "meta": "Unity 2D · Party · 2026",
+    "order": 1,
+    "repo": "sumo-square",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
     "gif": "",
@@ -93,6 +103,8 @@
   {
     "title": "Katami",
     "meta": "Unity 2D · Puzzle · 2026",
+    "order": 1,
+    "repo": "PaperGame",
     "status": "In Development",
     "description": "A puzzle game about folding paper.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
@@ -111,6 +123,8 @@
   {
     "title": "Learn to Count",
     "meta": "Unity 2D · Educational · 2026",
+    "order": 3,
+    "repo": "NumberGame",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
     "gif": "",
@@ -131,6 +145,8 @@
   {
     "title": "Masknum Opus",
     "meta": "Unity 2D · Story · 2026",
+    "order": 5,
+    "repo": "masknum-opus",
     "status": "Released",
     "description": "Infiltrate a bizarre, masked cult.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/masknum_thumbnail.png",
@@ -153,6 +169,8 @@
   {
     "title": "Molith",
     "meta": "Unity 3D · Exploration · 2025",
+    "order": 2,
+    "repo": "Molith",
     "status": "Released",
     "description": "Explore a mysterious field.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/molith_thumbnail.png",

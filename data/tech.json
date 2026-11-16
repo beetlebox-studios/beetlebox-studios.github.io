@@ -1,0 +1,66 @@
+[
+  {
+    "id": "unity",
+    "label": "Unity",
+    "color": "000000",
+    "logo": "unity",
+    "languages": [
+      "ShaderLab",
+      "HLSL"
+    ],
+    "threshold": 0
+  },
+  {
+    "id": "csharp",
+    "label": "C#",
+    "color": "239120",
+    "logo": "data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xLjE5NCA3LjU0M3Y4LjkxM2MwIDEuMTAzLjU4OCAyLjEyMiAxLjU0NCAyLjY3NGw3LjcxOCA0LjQ1NmEzLjA4NiAzLjA4NiAwIDAgMCAzLjA4OCAwbDcuNzE4LTQuNDU2YTMuMDg3IDMuMDg3IDAgMCAwIDEuNTQ0LTIuNjc0VjcuNTQzYTMuMDg0IDMuMDg0IDAgMCAwLTEuNTQ0LTIuNjczTDEzLjU0NC40MTRhMy4wODYgMy4wODYgMCAwIDAtMy4wODggMEwyLjczOCA0Ljg3YTMuMDg1IDMuMDg1IDAgMCAwLTEuNTQ0IDIuNjczWm01LjQwMyAyLjkxNHYzLjA4N2EuNzcuNzcgMCAwIDAgLjc3Mi43NzIuNzczLjc3MyAwIDAgMCAuNzcyLS43NzIuNzczLjc3MyAwIDAgMSAxLjMxNy0uNTQ2Ljc3NS43NzUgMCAwIDEgLjIyNi41NDYgMi4zMTQgMi4zMTQgMCAxIDEtNC42MzEgMHYtMy4wODdjMC0uNjE1LjI0NC0xLjIwMy42NzktMS42MzdhMi4zMTIgMi4zMTIgMCAwIDEgMy4yNzQgMGMuNDM0LjQzNC42NzggMS4wMjMuNjc4IDEuNjM3YS43NjkuNzY5IDAgMCAxLS4yMjYuNTQ1Ljc2Ny43NjcgMCAwIDEtMS4wOTEgMCAuNzcuNzcgMCAwIDEtLjIyNi0uNTQ1Ljc3Ljc3IDAgMCAwLS43NzItLjc3Mi43NzEuNzcxIDAgMCAwLS43NzIuNzcyWm0xMi4zNSAzLjA4N2EuNzcuNzcgMCAwIDEtLjc3Mi43NzJoLS43NzJ2Ljc3MmEuNzczLjc3MyAwIDAgMS0xLjU0NCAwdi0uNzcyaC0xLjU0NHYuNzcyYS43NzMuNzczIDAgMCAxLTEuMzE3LjU0Ni43NzUuNzc1IDAgMCAxLS4yMjYtLjU0NnYtLjc3MkgxMmEuNzcxLjc3MSAwIDEgMSAwLTEuNTQ0aC43NzJ2LTEuNTQzSDEyYS43Ny43NyAwIDEgMSAwLTEuNTQ0aC43NzJ2LS43NzJhLjc3My43NzMgMCAwIDEgMS4zMTctLjU0Ni43NzUuNzc1IDAgMCAxIC4yMjYuNTQ2di43NzJoMS41NDR2LS43NzJhLjc3My43NzMgMCAwIDEgMS41NDQgMHYuNzcyaC43NzJhLjc3Mi43NzIgMCAwIDEgMCAxLjU0NGgtLjc3MnYxLjU0M2guNzcyYS43NzYuNzc2IDAgMCAxIC43NzIuNzcyWm0tMy4wODgtMi4zMTVoLTEuNTQ0djEuNTQzaDEuNTQ0di0xLjU0M1oiLz48L3N2Zz4%3D",
+    "languages": [
+      "C#"
+    ]
+  },
+  {
+    "id": "typescript",
+    "label": "TypeScript",
+    "color": "007ACC",
+    "logo": "typescript",
+    "languages": [
+      "TypeScript"
+    ]
+  },
+  {
+    "id": "javascript",
+    "label": "JavaScript",
+    "color": "323330",
+    "logo": "javascript",
+    "logoColor": "F7DF1E",
+    "languages": [
+      "JavaScript"
+    ]
+  },
+  {
+    "id": "vite",
+    "label": "Vite",
+    "color": "646CFF",
+    "logo": "vite",
+    "languages": []
+  },
+  {
+    "id": "html",
+    "label": "HTML",
+    "color": "E34F26",
+    "logo": "html5",
+    "languages": [
+      "HTML"
+    ]
+  },
+  {
+    "id": "css",
+    "label": "CSS",
+    "color": "1572B6",
+    "logo": "css",
+    "languages": [
+      "CSS"
+    ]
+  }
+]
