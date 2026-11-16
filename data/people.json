@@ -126,5 +126,17 @@
     "links": {
       "itch": "https://enchae.itch.io/"
     }
+  },
+  {
+    "name": "Turple",
+    "roles": [
+      "Sound Designer"
+    ],
+    "bio": "bio text goes here",
+    "image": "",
+    "founder": false,
+    "links": {
+      "itch": "https://turple.itch.io/"
+    }
   }
 ]

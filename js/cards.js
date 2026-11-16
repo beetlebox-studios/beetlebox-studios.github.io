@@ -67,7 +67,7 @@ const CARD_TYPES = {
       if (item.image) {
         imgWrap.appendChild(makeImg(item.image, item.title, item.draft ? 'work-img work-img--draft' : 'work-img'));
       }
-      if (item.draft && item.screenshot) {
+      if (item.screenshot) {
         imgWrap.appendChild(makeImg(item.screenshot, item.title, 'work-img work-shot'));
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
