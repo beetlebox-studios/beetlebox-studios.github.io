@@ -1,5 +1,24 @@
 [
   {
+    "title": "Katami",
+    "meta": "Unity 2D · 2027",
+    "status": "In Development",
+    "description": "A puzzle game about folding paper.",
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
+    "gif": "",
+    "credits": [
+      "Elan",
+      "Max",
+      "Ryan",
+      "AnglerFishArt",
+      "hutthutthutt",
+      "Mafgar"
+    ],
+    "links": {
+      "steam": "https://store.steampowered.com/app/3828230/KATAMI_A_Paper_Story/"
+    }
+  },
+  {
     "title": "Bubblefish",
     "meta": "Unity 2D · Retro · 2026",
     "status": "Shelved",
@@ -19,12 +38,10 @@
   },
   {
     "title": "Book Wyrm",
-    "draft": true,
     "meta": "Vite · TypeScript · Retro · 2026",
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
-    "screenshot": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/screenshots/bookwyrm_playfield.png",
     "gif": "",
     "credits": [
       "Elan",
@@ -91,26 +108,8 @@
     }
   },
   {
-    "title": "Katami",
-    "meta": "Unity 2D",
-    "status": "In Development",
-    "description": "A puzzle game about folding paper.",
-    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
-    "gif": "",
-    "credits": [
-      "Max",
-      "Ryan",
-      "AnglerFishArt",
-      "hutthutthutt",
-      "Mafgar"
-    ],
-    "links": {
-      "steam": "https://store.steampowered.com/app/3828230/KATAMI_A_Paper_Story/"
-    }
-  },
-  {
     "title": "Learn to Count",
-    "meta": "Jam game",
+    "meta": "Jam game · 2026",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
     "gif": "",
