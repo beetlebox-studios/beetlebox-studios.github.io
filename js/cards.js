@@ -47,7 +47,6 @@ class CardGrid {
       .filter(group => group.length);
     let i = 0;
     groups.forEach((group, g) => {
-      if (g > 0) grid.appendChild(el('hr', 'work-divider'));
       group.forEach(item => {
         const card = def.buildCard(item, i++);
         if (item.draft) card.classList.add('is-draft');
