@@ -44,6 +44,14 @@
   color-scheme: light;
 }
 :root[data-theme="dark"] { color-scheme: dark; }
+/* theme change: the new theme is clipped to a growing circle (see theme.js), the old one stays put beneath */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
 /* the white beetle badge and logo flip to black on the light theme */
 :root[data-theme="light"] .team-badge,
 :root[data-theme="light"] .team-launch-logo { filter: invert(1); }
