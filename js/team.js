@@ -385,6 +385,7 @@
     last = t;
     const drift = reduceMotion.matches ? 0 : DRIFT;
     const fade = 1 - Math.exp(-FADE_RATE * dt);
+    stepField(t, dt);
     devs.forEach(d => {
       d.vx = (d.vx || 0) + (SPRING * (d.tx - d.x) - DAMP * (d.vx || 0)) * dt;
       d.vy = (d.vy || 0) + (SPRING * (d.ty - d.y) - DAMP * (d.vy || 0)) * dt;
@@ -453,7 +454,7 @@
     selected = !!pick;
     selectedPerson = null;
     leaveSolar();
-    if (pick?.stickers?.length) showCenter(pick.stickers, pick.title);
+    if (pick && (pick.cover || pick.stickers?.length)) showCenter(pick);
     else clearCenter();
     focus = pick?.credits?.length ? new Set(pick.credits.map(n => n.toLowerCase())) : null;
     projectRoles = pick?.roles ?? {};
@@ -535,34 +536,106 @@
     return { x: w / 2 + dx * k * 1.2, y: h / 2 + dy * k * 1.2 };
   }
 
+  // ── Planets and stickers are free-floating bodies: they spring toward their slot, bob gently, and a
+  // force field keeps them (and the people nodes) from overlapping ───────────────────────────────────
+  const GAP_FIELD = 14;
+  const FIELD_PUSH = 60;
+  const BODY_SPRING = 16;
+  const BODY_DAMP = 2 * Math.sqrt(BODY_SPRING);
+  const BOB = 7;
+  const field = new Set();
+
   // centre the node on (x, y); the first time, start beyond the panel edge and drift in
-  function placeNode(node, x, y, w, h, delay) {
+  function placeNode(node, x, y, w, h, fixed = false) {
     node.style.width = `${w}px`;
     node.style.height = `${h}px`;
-    node.dataset.w = w;
-    node.dataset.h = h;
-    if (!node.dataset.placed) {
+    let b = node._body;
+    if (!b) {
       const out = offscreen(x, y);
-      node.style.transition = 'none';
-      node.style.left = `${out.x - w / 2}px`;
-      node.style.top = `${out.y - h / 2}px`;
-      node.getBoundingClientRect();
-      node.style.transition = '';
-      node.dataset.placed = '1';
+      const seed = field.size * 1.7 + 1;
+      b = node._body = {
+        x: out.x, y: out.y, vx: 0, vy: 0, w, h, fixed, out: false,
+        p1: seed, p2: seed * 2.1, f1: 0.0016 + (seed % 5) * 0.0002, f2: 0.0013 + (seed % 7) * 0.00017,
+      };
+      field.add(node);
     }
-    node.style.transitionDelay = `${delay}ms`;
-    node.style.left = `${x - w / 2}px`;
-    node.style.top = `${y - h / 2}px`;
+    b.tx = x;
+    b.ty = y;
+    b.w = w;
+    b.h = h;
+    b.fixed = fixed;
   }
 
   function slideOut(nodes) {
     nodes.forEach(n => {
-      const w = Number(n.dataset.w) || 0;
-      const h = Number(n.dataset.h) || 0;
-      const out = offscreen(parseFloat(n.style.left) + w / 2, parseFloat(n.style.top) + h / 2);
-      n.style.left = `${out.x - w / 2}px`;
-      n.style.top = `${out.y - h / 2}px`;
-      setTimeout(() => n.remove(), 900);
+      const b = n._body;
+      if (!b) { n.remove(); return; }
+      const out = offscreen(b.x, b.y);
+      b.tx = out.x;
+      b.ty = out.y;
+      b.out = true;
+      setTimeout(() => { field.delete(n); n.remove(); }, 1100);
+    });
+  }
+
+  function stepField(t, dt) {
+    const bodies = [...field].map(n => ({ n, b: n._body }));
+    const live = bodies.filter(({ b }) => !b.out);
+    bodies.forEach(({ b }) => {
+      b.ax = BODY_SPRING * (b.tx - b.x) - BODY_DAMP * b.vx;
+      b.ay = BODY_SPRING * (b.ty - b.y) - BODY_DAMP * b.vy;
+    });
+    // box-vs-box repulsion with a margin, so bodies keep their distance before they touch
+    const push = (a, hxA, hyA, o, hxO, hyO, moveO, moveA) => {
+      const dx = o.x - a.x;
+      const dy = o.y - a.y;
+      const px = hxA + hxO + GAP_FIELD - Math.abs(dx);
+      const py = hyA + hyO + GAP_FIELD - Math.abs(dy);
+      if (px <= 0 || py <= 0) return;
+      if (px < py) {
+        const f = px * FIELD_PUSH * Math.sign(dx || 1);
+        if (moveO) o.ax += f;
+        if (moveA) a.ax -= f;
+      } else {
+        const f = py * FIELD_PUSH * Math.sign(dy || 1);
+        if (moveO) o.ay += f;
+        if (moveA) a.ay -= f;
+      }
+    };
+    for (let i = 0; i < live.length; i++) {
+      for (let j = i + 1; j < live.length; j++) {
+        const A = live[i].b;
+        const B = live[j].b;
+        if (A.fixed && B.fixed) continue;
+        push(A, A.w / 2, A.h / 2, B, B.w / 2, B.h / 2, !B.fixed, !A.fixed);
+      }
+      const A = live[i].b;
+      if (A.fixed) continue;
+      devs.forEach(d => {
+        if (d.a < 0.3) return;
+        const r = (d.sz ?? size) / 2 + 6;
+        push({ x: d.x, y: d.y }, r, r + 12, A, A.w / 2, A.h / 2, true, false);
+      });
+    }
+    bodies.forEach(({ n, b }) => {
+      b.vx += b.ax * dt;
+      b.vy += b.ay * dt;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      // once a body has slid in, the panel edge becomes a wall; leaving bodies pass through it
+      const W = container.clientWidth;
+      const H = container.clientHeight;
+      if (!b.out) {
+        if (b.born === undefined) b.born = t;
+        if (t - b.born > 1000) {
+          b.x = Math.min(W - b.w / 2 - 6, Math.max(b.w / 2 + 6, b.x));
+          b.y = Math.min(H - b.h / 2 - 6, Math.max(b.h / 2 + 6, b.y));
+        }
+      }
+      n.style.left = `${b.x - b.w / 2}px`;
+      n.style.top = `${b.y - b.h / 2}px`;
+      const amp = reduceMotion.matches ? 0 : BOB;
+      n.style.translate = `${(Math.sin(t * b.f1 + b.p1) * amp).toFixed(2)}px ${(Math.cos(t * b.f2 + b.p2) * amp).toFixed(2)}px`;
     });
   }
 
@@ -578,27 +651,59 @@
     slideOut(old);
   }
 
-  // the selected game's stickers sit in the middle of the panel, among its creators
-  function showCenter(stickers, title) {
+  // the selected game's cover and stickers sit in the middle of the panel, among its creators
+  function showCenter(pick) {
     clearCenter();
-    centerNodes = stickers.map((src, i) => buildPlanet({ game: { title }, sticker: src }, i));
-    centerNodes.forEach((n, i) => {
-      n.classList.add('team-game--center');
-      n.style.setProperty('--rot', `${i % 2 ? 4 : -4}deg`);
+    const nodes = [];
+    if (pick.cover) {
+      const cover = el('div', 'team-cover');
+      cover.dataset.src = pick.cover;
+      preload(pick.cover);
+      cover.appendChild(makeImg(pick.cover, pick.title, 'team-cover-img'));
+      container.appendChild(cover);
+      nodes.push(cover);
+    }
+    (pick.stickers ?? []).forEach((src, i) => {
+      const node = buildPlanet({ game: { title: pick.title }, sticker: src }, i);
+      node.classList.add('team-game--center');
+      node.style.setProperty('--rot', `${i % 2 ? 3 : -3}deg`);
+      nodes.push(node);
     });
+    centerNodes = nodes;
   }
 
   function layoutCenter(w, h) {
-    const n = centerNodes.length;
-    if (!n) return;
-    const room = Math.min(w * 0.28, h * 0.17);
-    const each = n > 1 ? room * 0.78 : room;
-    const step = n > 1 ? each * 0.78 : 0;
-    centerNodes.forEach((node, i) => {
+    if (!centerNodes.length) return;
+    const cover = centerNodes.find(n => n.classList.contains('team-cover'));
+    const stickers = centerNodes.filter(n => n !== cover);
+    const gap = 16;
+    let coverW = 0;
+    let coverH = 0;
+    if (cover) {
+      const aspect = aspects.get(cover.dataset.src) || 2.1;
+      coverW = Math.min(w * 0.5, 260);
+      coverH = coverW / aspect;
+    }
+    const n = stickers.length;
+    let each = Math.min(w * 0.28, h * 0.17) * (n > 1 ? 0.78 : 1);
+    if (n > 1) each = Math.min(each, (w * 0.6 - gap * (n - 1)) / n);
+    const sizes = stickers.map(node => {
       const aspect = aspects.get(node.dataset.src) || 1;
       const ww = aspect >= 1 ? each : each * aspect;
-      const hh = ww / aspect;
-      placeNode(node, w / 2 + (i - (n - 1) / 2) * step, h / 2, ww, hh, i * 90);
+      return { node, ww, hh: ww / aspect };
+    });
+    const rowH = sizes.length ? Math.max(...sizes.map(s => s.hh)) : 0;
+    const stackH = coverH + (cover && sizes.length ? gap : 0) + rowH;
+    let y = h / 2 - stackH / 2;
+    if (cover) {
+      placeNode(cover, w / 2, y + coverH / 2, coverW, coverH, true);
+      y += coverH + gap;
+    }
+    const rowW = sizes.reduce((sum, s) => sum + s.ww, 0) + gap * Math.max(0, sizes.length - 1);
+    let x = w / 2 - rowW / 2;
+    sizes.forEach(({ node, ww, hh }) => {
+      placeNode(node, x + ww / 2, y + rowH / 2, ww, hh);
+      x += ww + gap;
     });
   }
 
@@ -639,16 +744,16 @@
     // games on an ellipse around the middle
     const n = solar.planets.length;
     const rx1 = (w / 2) * 0.55;
-    const ry1 = (h / 2) * 0.5;
+    const ry1 = (h / 2) * 0.44;
     const angles = solar.planets.map((_, i) => -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2);
     const pts = angles.map(a => ({ x: cx + Math.cos(a) * rx1, y: cy + Math.sin(a) * ry1 }));
     let gap = w * 0.25;
     if (n > 1) gap = Math.min(...pts.map((p, i) => Math.hypot(p.x - pts[(i + 1) % n].x, p.y - pts[(i + 1) % n].y)));
-    const gD = Math.max(40, Math.min(w * 0.2, gap * 0.82));
+    const gD = Math.max(40, Math.min(w * 0.17, gap * 0.8));
     gameNodes.forEach((node, i) => {
       const aspect = node.dataset.src ? aspects.get(node.dataset.src) || 1 : 1;
       const ww = aspect >= 1 ? gD : gD * aspect;
-      placeNode(node, pts[i].x, pts[i].y, ww, ww / aspect, i * 70);
+      placeNode(node, pts[i].x, pts[i].y, ww, ww / aspect);
     });
 
     // collaborators: one each, on the outer ring at the average angle of the games they worked on
