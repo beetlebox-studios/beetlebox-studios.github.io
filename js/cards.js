@@ -66,6 +66,14 @@ let selectedPersonName = null;
 const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
 // One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
+// a selected game's gif keeps looping even when the mouse leaves; a deselected one stops unless hovered
+function syncGif(card) {
+  const gif = card._gif;
+  if (!gif) return;
+  if (card.classList.contains('is-selected') || card.matches(':hover')) gif.el.src = gif.src;
+  else gif.el.src = '';
+}
+
 function launchOf(item) {
   const links = item.links ?? {};
   const list = [];
@@ -79,15 +87,17 @@ function setSelected(card, item) {
   if (selected) {
     selected.card.classList.remove('is-selected');
     selected.card.setAttribute('aria-pressed', 'false');
+    syncGif(selected.card);
   }
   selected = card ? { card, item } : null;
   showRelated(null);
   if (card) {
     card.classList.add('is-selected');
     card.setAttribute('aria-pressed', 'true');
+    syncGif(card);
   }
   window.dispatchEvent(new CustomEvent('team:select', {
-    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item) } : null,
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: item.favicons ?? [], cover: item.gif || item.image || '' } : null,
   }));
 }
 
@@ -112,6 +122,7 @@ window.addEventListener('person:select', e => {
   if (name && selected) {
     selected.card.classList.remove('is-selected');
     selected.card.setAttribute('aria-pressed', 'false');
+    syncGif(selected.card);
     selected = null;
   }
   showRelated(name);
@@ -162,7 +173,8 @@ const CARD_TYPES = {
         const gifEl = makeImg('', item.title, 'work-gif');
         gifEl.setAttribute('aria-hidden', 'true');
         card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
-        card.addEventListener('mouseleave', () => { gifEl.src = ''; });
+        card.addEventListener('mouseleave', () => { if (!card.classList.contains('is-selected')) gifEl.src = ''; });
+        card._gif = { el: gifEl, src: item.gif };
         imgWrap.appendChild(gifEl);
       }
 

@@ -54,7 +54,10 @@
       "play": "https://beetlebox-studios.github.io/games/lexwright/",
       "itch": "https://elanmakesgames.itch.io/book-wyrm"
     },
-    "favicon": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png"
+    "favicons": [
+      "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png",
+      "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm_cover.png"
+    ]
   },
   {
     "title": "250 is...",
