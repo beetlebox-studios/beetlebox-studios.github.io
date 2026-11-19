@@ -52,8 +52,9 @@
   let devLines = [];
   let focus = null;
   let selected = false;
-  let launchActive = false;
-  let launchDev = null;
+  let launchActive = new Set();
+  const launchDevs = {};
+  let selectedPerson = null;
   let projectRoles = {};
   let roleOrder = [];
   let size = 72;
@@ -115,6 +116,15 @@
     } else {
       circle.appendChild(monogram(item.name));
     }
+    circle.tabIndex = 0;
+    circle.setAttribute('role', 'button');
+    circle.setAttribute('aria-label', `Select ${item.name}`);
+    circle.addEventListener('click', () => selectPerson(item.name));
+    circle.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      selectPerson(item.name);
+    });
     node.appendChild(circle);
 
     const label = el('div', 'team-node-label');
@@ -149,28 +159,42 @@
     return node;
   }
 
-  // The launch capsule: a circle that appears next to the creators of the selected game
-  function buildLaunchNode() {
-    const node = el('div', 'team-node team-node--launch');
+  // Launch buttons (BeetleBox / itch.io / Steam): small circles with a play badge, shown next to the
+  // creators of the selected game
+  function buildLaunchNode(kind) {
+    const node = el('div', `team-node team-node--launch team-node--${kind}`);
     const circle = el('a', 'team-node-circle team-node-launch');
     circle.target = '_blank';
     circle.rel = 'noopener';
     node.appendChild(circle);
+    const badge = el('a', 'team-launch-play');
+    badge.target = '_blank';
+    badge.rel = 'noopener';
+    badge.tabIndex = -1;
+    badge.setAttribute('aria-hidden', 'true');
+    badge.innerHTML = '<i class="fa-solid fa-play"></i>';
+    node.appendChild(badge);
     const label = el('div', 'team-node-label');
-    label.appendChild(text('p', 'team-node-name', 'Play'));
+    label.appendChild(text('p', 'team-node-name', ''));
     label.appendChild(el('div', 'team-node-roles'));
     node.appendChild(label);
     return node;
   }
 
-  function setLaunch(launchInfo, title) {
-    if (!launchDev || !launchInfo) return;
-    const circle = launchDev.node.querySelector('.team-node-launch');
-    circle.href = launchInfo.url;
-    circle.setAttribute('aria-label', `${launchInfo.label}: ${title}`);
-    circle.innerHTML = `<i class="${launchInfo.icon}"></i>`;
-    launchDev.node.querySelector('.team-node-name').textContent = launchInfo.label;
-    launchDev.roles = [title];
+  function setLaunch(list, title) {
+    Object.entries(launchDevs).forEach(([kind, d]) => {
+      const info = list.find(l => l.kind === kind);
+      if (!info) return;
+      const circle = d.node.querySelector('.team-node-launch');
+      circle.href = info.url;
+      circle.setAttribute('aria-label', `Play ${title} on ${info.label}`);
+      circle.replaceChildren();
+      if (info.image) circle.appendChild(makeImg(info.image, '', 'team-launch-logo'));
+      else circle.innerHTML = `<i class="${info.icon}"></i>`;
+      d.node.querySelector('.team-launch-play').href = info.url;
+      d.node.querySelector('.team-node-name').textContent = info.label;
+      d.roles = [title];
+    });
   }
 
   function sortRoles(roles, who) {
@@ -277,7 +301,7 @@
     const people = devs.filter(d => !d.launch);
     let shown = people.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
     if (!shown.length) shown = people;
-    if (launchActive && launchDev) shown = [...shown, launchDev];
+    shown = [...shown, ...Object.entries(launchDevs).filter(([kind]) => launchActive.has(kind)).map(([, d]) => d)];
     devs.forEach(d => {
       const own = focus && projectRoles[d.item.name];
       setChips(d, own ? sortRoles(own, d.item.name) : d.roles);
@@ -413,12 +437,31 @@
     clearTimeout(release);
     const pick = e.detail;
     selected = !!pick;
+    selectedPerson = null;
     focus = pick?.credits?.length ? new Set(pick.credits.map(n => n.toLowerCase())) : null;
     projectRoles = pick?.roles ?? {};
-    launchActive = !!pick?.launch;
-    if (launchActive) setLaunch(pick.launch, pick.title);
+    launchActive = new Set((pick?.launch ?? []).map(l => l.kind));
+    if (pick?.launch?.length) setLaunch(pick.launch, pick.title);
+    markSelectedPerson();
     arrange();
   });
+
+  function markSelectedPerson() {
+    devs.forEach(d => d.node.classList.toggle('team-node--selected', !d.launch && d.item.name === selectedPerson));
+  }
+
+  // Clicking a creator selects them: their node is outlined and their games are outlined in the grid
+  function selectPerson(name) {
+    clearTimeout(release);
+    selectedPerson = selectedPerson === name ? null : name;
+    selected = false;
+    focus = null;
+    projectRoles = {};
+    launchActive = new Set();
+    markSelectedPerson();
+    arrange();
+    window.dispatchEvent(new CustomEvent('person:select', { detail: selectedPerson }));
+  }
 
   window.addEventListener('team:focus', e => {
     if (selected) return;
@@ -427,6 +470,12 @@
     const next = credits?.length ? new Set(credits.map(n => n.toLowerCase())) : null;
     if (next) { focus = next; projectRoles = e.detail.roles ?? {}; arrange(); return; }
     release = setTimeout(() => { focus = null; projectRoles = {}; arrange(); }, RELEASE_MS);
+  });
+
+  window.addEventListener('person:clear', () => { if (selectedPerson) selectPerson(selectedPerson); });
+
+  container.addEventListener('click', e => {
+    if (selectedPerson && !e.target.closest('.team-node')) selectPerson(selectedPerson);
   });
 
   // ── Load people ────────────────────────────────────────────────────────────
@@ -451,12 +500,15 @@
       setChips(d, d.roles);
       return d;
     });
-    const launchNode = buildLaunchNode();
-    launchNode.style.setProperty('--delay', '0ms');
-    container.appendChild(launchNode);
-    launchDev = { item: { name: '__launch__', roles: [], links: {} }, launch: true, node: launchNode,
-      label: launchNode.querySelector('.team-node-label'), roles: [], links: 0, x: 0, y: 0, a: 0, ta: 0 };
-    devs.push(launchDev);
+    ['bbox', 'itch', 'steam'].forEach(kind => {
+      const node = buildLaunchNode(kind);
+      node.style.setProperty('--delay', '0ms');
+      container.appendChild(node);
+      const d = { item: { name: `__launch-${kind}__`, roles: [], links: {} }, launch: true, node,
+        label: node.querySelector('.team-node-label'), roles: [], links: 0, x: 0, y: 0, a: 0, ta: 0 };
+      launchDevs[kind] = d;
+      devs.push(d);
+    });
     buildWeb();
     arrange();
     requestAnimationFrame(tick);

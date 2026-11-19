@@ -504,9 +504,19 @@ mark.search-hl.search-hl--current {
   box-shadow: var(--shadow-lg);
 }
 .work-card:active { transform: scale(0.98); }
-.work-card.is-selected {
-  box-shadow: 0 0 0 2px var(--primary), var(--shadow-lg);
+.work-card { position: relative; }
+/* Selection ring drawn inside the card, above the artwork, so neighbours and the grid edge never clip it */
+.work-card.is-selected::after,
+.work-card.is-related::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border: 2px solid var(--primary);
+  border-radius: inherit;
+  pointer-events: none;
 }
+.work-card.is-dim { opacity: 0.45; }
 .work-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .work-img-wrap {
@@ -1473,18 +1483,53 @@ body {
 }
 
 /* Launch capsule — appears beside a selected game's creators */
+.team-node--launch {
+  width: calc(var(--node-size) * 0.62);
+  height: calc(var(--node-size) * 0.62);
+  translate: calc(var(--node-size) * 0.19) calc(var(--node-size) * 0.19);
+}
 .team-node-launch {
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  color: var(--text);
+  font-size: calc(var(--node-size) * 0.26);
+  text-decoration: none;
+}
+.team-launch-logo {
+  width: 62%;
+  height: 62%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.team-launch-play {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  z-index: 7;
+  width: 42%;
+  height: 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: calc(var(--node-size) * 0.14);
   color: var(--page-bg);
   background: var(--primary);
-  border-color: var(--primary);
-  font-size: calc(var(--node-size) * 0.34);
+  box-shadow: 0 0 0 2px var(--page-bg);
   text-decoration: none;
 }
 .team-node--launch .team-node-name { color: var(--primary); }
+.team-node--selected .team-node-circle {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent),
+              0 0 0 6px color-mix(in oklch, var(--primary) 35%, transparent),
+              0 0 26px color-mix(in oklch, var(--primary) 55%, transparent);
+  transform: scale(1.08);
+}
+.team-node--selected .team-node-name { color: var(--primary); }
+.team-node-circle { cursor: pointer; }
 .team-node--launch .team-chip { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
 .team-node:hover .team-node-links {
   opacity: 1;

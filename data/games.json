@@ -53,22 +53,6 @@
     }
   },
   {
-    "title": "Octane",
-    "meta": "Custom · Action · 2028",
-    "status": "Upcoming",
-    "credits": [
-      "Elan"
-    ],
-    "roles": {
-      "Elan": [
-        "Game Designer"
-      ]
-    },
-    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/octane_thumbnail.png",
-    "gif": "",
-    "links": {}
-  },
-  {
     "title": "250 is...",
     "meta": "Unity 2D · Trivia · 2026",
     "status": "In Development",
@@ -187,5 +171,21 @@
       "play": "https://beetlebox-studios.github.io/games/molith/",
       "itch": "https://elanmakesgames.itch.io/molith"
     }
+  },
+  {
+    "title": "Octane",
+    "meta": "Custom · Action · 2028",
+    "status": "Upcoming",
+    "credits": [
+      "Elan"
+    ],
+    "roles": {
+      "Elan": [
+        "Game Designer"
+      ]
+    },
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/octane_thumbnail.png",
+    "gif": "",
+    "links": {}
   }
 ]
