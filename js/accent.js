@@ -95,7 +95,10 @@ let currentVal = DEFAULT_VAL;
 
 function applyVal(val) {
   currentVal = val;
-  const { l, c, h } = lerpStop(val);
+  const stop = lerpStop(val);
+  // the accent is darkened on the light theme so text and rings stay readable
+  const l = document.documentElement.dataset.theme === 'light' ? stop.l * 0.8 : stop.l;
+  const { c, h } = stop;
   const oklchStr = `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${h})`;
   document.documentElement.style.setProperty('--primary', oklchStr);
 
@@ -114,6 +117,8 @@ function applyVal(val) {
   updateFavicon(hex);
   window.dispatchEvent(new Event('settings:changed'));
 }
+
+window.addEventListener('theme:changed', () => applyVal(currentVal));
 
 (function initAccent() {
   applyVal(DEFAULT_VAL);
