@@ -20,7 +20,7 @@
   },
   {
     "title": "Bubblefish",
-    "meta": "Retik 3D (custom) · Unity · Retro · 2026",
+    "meta": "Unity · Custom · Retro · 2026",
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
@@ -38,7 +38,7 @@
   },
   {
     "title": "Book Wyrm",
-    "meta": "Retik 2D (custom) · Vite · TypeScript · Retro · 2026",
+    "meta": "Vite · TypeScript · Custom · Retro · 2026",
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
@@ -55,6 +55,15 @@
   {
     "title": "Octane",
     "meta": "Custom · Action · 2028",
+    "status": "Upcoming",
+    "credits": [
+      "Elan"
+    ],
+    "roles": {
+      "Elan": [
+        "Game Designer"
+      ]
+    },
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/octane_thumbnail.png",
     "gif": "",
     "links": {}
