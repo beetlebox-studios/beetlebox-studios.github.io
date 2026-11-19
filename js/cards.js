@@ -87,7 +87,7 @@ function setSelected(card, item) {
     card.setAttribute('aria-pressed', 'true');
   }
   window.dispatchEvent(new CustomEvent('team:select', {
-    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item) } : null,
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: item.favicons ?? [] } : null,
   }));
 }
 

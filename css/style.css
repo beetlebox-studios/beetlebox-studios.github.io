@@ -1695,3 +1695,19 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .team-game, .team-game-img { animation: none; }
 }
+
+/* Sticker planets: games with favicons show them as outlined stickers, no circle and no label */
+.team-game--sticker { z-index: 3; }
+.team-sticker {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  rotate: var(--rot, 0deg);
+  /* white vinyl-sticker outline */
+  filter:
+    drop-shadow(3px 0 0 white) drop-shadow(-3px 0 0 white) drop-shadow(0 3px 0 white) drop-shadow(0 -3px 0 white)
+    drop-shadow(2px 2px 0 white) drop-shadow(-2px 2px 0 white) drop-shadow(2px -2px 0 white) drop-shadow(-2px -2px 0 white)
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+.team-game--center { z-index: 2; }

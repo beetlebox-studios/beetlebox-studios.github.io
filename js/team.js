@@ -59,6 +59,8 @@
   let solarTimer = 0;
   let gamesData = [];
   let gameNodes = [];
+  let centerNodes = [];
+  const aspects = new Map();
   let projectRoles = {};
   let roleOrder = [];
   let size = 72;
@@ -336,7 +338,7 @@
     for (let s = base; s >= 44; s -= 4) sizes.push(s);
     let best = null;
     for (const s of sizes) {
-      for (let k = Math.min(1, 0.35 + 0.1 * shown.length); k <= 1.001 && !best; k += 0.05) {
+      for (let k = centerNodes.length ? 1 : Math.min(1, 0.35 + 0.1 * shown.length); k <= 1.001 && !best; k += 0.05) {
         const pts = slots(shown.length, w, h, s, Math.max(s, cellW), labelH, k);
         if (fits(pts, s, shown, w, h)) best = { s, pts };
       }
@@ -361,6 +363,7 @@
       if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; }
     });
     updateAnchors();
+    layoutCenter(w, h);
     snap = false;
   }
 
@@ -450,6 +453,8 @@
     selected = !!pick;
     selectedPerson = null;
     leaveSolar();
+    if (pick?.stickers?.length) showCenter(pick.stickers, pick.title);
+    else clearCenter();
     focus = pick?.credits?.length ? new Set(pick.credits.map(n => n.toLowerCase())) : null;
     projectRoles = pick?.roles ?? {};
     launchActive = new Set((pick?.launch ?? []).map(l => l.kind));
@@ -472,20 +477,43 @@
     d.node.classList.remove('team-node--small');
   }
 
-  function buildGameNode(game, i) {
-    const node = el('a', 'team-game');
+  function stickersOf(game) {
+    return game.favicons ?? [];
+  }
+
+  // width / height of a sticker image, so it keeps its shape; circles are 1
+  function preload(src) {
+    if (aspects.has(src)) return;
+    aspects.set(src, 1);
+    const img = new Image();
+    img.onload = () => {
+      aspects.set(src, img.naturalWidth / img.naturalHeight);
+      if (solar || centerNodes.length) arrange();
+    };
+    img.src = src;
+  }
+
+  // A planet is either a circle-cropped thumbnail, or (when the game has favicons) one outlined sticker
+  // per favicon: no circle and no label
+  function buildPlanet(planet, i) {
+    const { game, sticker } = planet;
+    const node = el('a', sticker ? 'team-game team-game--sticker' : 'team-game');
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
     node.setAttribute('aria-label', `Open ${game.title}`);
     node.style.setProperty('--float', `${6 + (i * 1.7) % 4}s`);
     node.style.setProperty('--pan', `${9 + (i * 2.3) % 6}s`);
     node.style.setProperty('--fd', `${-(i * 1.3)}s`);
-    const ring = el('div', 'team-game-ring');
-    // the favicon is the planet when the game has one; otherwise the thumbnail is cropped
-    const art = game.favicon || game.image;
-    if (art) ring.appendChild(makeImg(art, game.title, game.favicon ? 'team-game-img team-game-img--icon' : 'team-game-img'));
-    node.appendChild(ring);
-    node.appendChild(text('span', 'team-game-label', game.title));
+    if (sticker) {
+      preload(sticker);
+      node.dataset.src = sticker;
+      node.appendChild(makeImg(sticker, game.title, 'team-sticker'));
+    } else {
+      const ring = el('div', 'team-game-ring');
+      if (game.image) ring.appendChild(makeImg(game.image, game.title, 'team-game-img'));
+      node.appendChild(ring);
+      node.appendChild(text('span', 'team-game-label', game.title));
+    }
     const pick = () => window.dispatchEvent(new CustomEvent('game:pick', { detail: game.title }));
     node.addEventListener('click', pick);
     node.addEventListener('keydown', e => {
@@ -507,15 +535,70 @@
     return { x: w / 2 + dx * k * 1.2, y: h / 2 + dy * k * 1.2 };
   }
 
+  // centre the node on (x, y); the first time, start beyond the panel edge and drift in
+  function placeNode(node, x, y, w, h, delay) {
+    node.style.width = `${w}px`;
+    node.style.height = `${h}px`;
+    node.dataset.w = w;
+    node.dataset.h = h;
+    if (!node.dataset.placed) {
+      const out = offscreen(x, y);
+      node.style.transition = 'none';
+      node.style.left = `${out.x - w / 2}px`;
+      node.style.top = `${out.y - h / 2}px`;
+      node.getBoundingClientRect();
+      node.style.transition = '';
+      node.dataset.placed = '1';
+    }
+    node.style.transitionDelay = `${delay}ms`;
+    node.style.left = `${x - w / 2}px`;
+    node.style.top = `${y - h / 2}px`;
+  }
+
+  function slideOut(nodes) {
+    nodes.forEach(n => {
+      const w = Number(n.dataset.w) || 0;
+      const h = Number(n.dataset.h) || 0;
+      const out = offscreen(parseFloat(n.style.left) + w / 2, parseFloat(n.style.top) + h / 2);
+      n.style.left = `${out.x - w / 2}px`;
+      n.style.top = `${out.y - h / 2}px`;
+      setTimeout(() => n.remove(), 900);
+    });
+  }
+
   function clearGameNodes() {
     const old = gameNodes;
     gameNodes = [];
-    old.forEach(n => {
-      const d = parseFloat(n.style.width) / 2 || 0;
-      const out = offscreen(parseFloat(n.style.left) + d, parseFloat(n.style.top) + d);
-      n.style.left = `${out.x - d}px`;
-      n.style.top = `${out.y - d}px`;
-      setTimeout(() => n.remove(), 900);
+    slideOut(old);
+  }
+
+  function clearCenter() {
+    const old = centerNodes;
+    centerNodes = [];
+    slideOut(old);
+  }
+
+  // the selected game's stickers sit in the middle of the panel, among its creators
+  function showCenter(stickers, title) {
+    clearCenter();
+    centerNodes = stickers.map((src, i) => buildPlanet({ game: { title }, sticker: src }, i));
+    centerNodes.forEach((n, i) => {
+      n.classList.add('team-game--center');
+      n.style.setProperty('--rot', `${i % 2 ? 4 : -4}deg`);
+    });
+  }
+
+  function layoutCenter(w, h) {
+    const n = centerNodes.length;
+    if (!n) return;
+    const room = Math.min(w * 0.28, h * 0.17);
+    const each = n > 1 ? room * 0.78 : room;
+    const step = n > 1 ? each * 0.78 : 0;
+    centerNodes.forEach((node, i) => {
+      const aspect = aspects.get(node.dataset.src) || 1;
+      const ww = aspect >= 1 ? each : each * aspect;
+      const hh = ww / aspect;
+      placeNode(node, w / 2 + (i - (n - 1) / 2) * step, h / 2, ww, hh, i * 90);
     });
   }
 
@@ -527,8 +610,9 @@
     const names = new Set(games.flatMap(g => g.credits ?? []).map(c => c.toLowerCase()));
     names.delete(lower);
     const collab = devs.filter(d => !d.launch && names.has(d.item.name.toLowerCase()));
-    solar = { name, games, collab, shown: false };
-    gameNodes = games.map(buildGameNode);
+    const planets = games.flatMap(g => (stickersOf(g).length ? stickersOf(g).map(sticker => ({ game: g, sticker })) : [{ game: g }]));
+    solar = { name, games, planets, collab, shown: false };
+    gameNodes = planets.map(buildPlanet);
     // everyone else hides first, then the collaborators come back smaller around the games
     solarTimer = setTimeout(() => { if (solar) { solar.shown = true; arrange(); } }, 520);
   }
@@ -553,37 +637,25 @@
     if (center) { center.ta = 1; center.tx = cx; center.ty = cy; center.sz = undefined; }
 
     // games on an ellipse around the middle
-    const n = solar.games.length;
+    const n = solar.planets.length;
     const rx1 = (w / 2) * 0.55;
     const ry1 = (h / 2) * 0.5;
-    const angles = solar.games.map((_, i) => -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2);
+    const angles = solar.planets.map((_, i) => -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2);
     const pts = angles.map(a => ({ x: cx + Math.cos(a) * rx1, y: cy + Math.sin(a) * ry1 }));
     let gap = w * 0.25;
     if (n > 1) gap = Math.min(...pts.map((p, i) => Math.hypot(p.x - pts[(i + 1) % n].x, p.y - pts[(i + 1) % n].y)));
     const gD = Math.max(40, Math.min(w * 0.2, gap * 0.82));
     gameNodes.forEach((node, i) => {
-      node.style.width = `${gD}px`;
-      node.style.height = `${gD}px`;
-      if (!node.dataset.placed) {
-        // start beyond the panel edge, then drift into orbit
-        const out = offscreen(pts[i].x, pts[i].y);
-        node.style.transition = 'none';
-        node.style.left = `${out.x - gD / 2}px`;
-        node.style.top = `${out.y - gD / 2}px`;
-        node.getBoundingClientRect();
-        node.style.transition = '';
-        node.dataset.placed = '1';
-      }
-      node.style.transitionDelay = `${i * 70}ms`;
-      node.style.left = `${pts[i].x - gD / 2}px`;
-      node.style.top = `${pts[i].y - gD / 2}px`;
+      const aspect = node.dataset.src ? aspects.get(node.dataset.src) || 1 : 1;
+      const ww = aspect >= 1 ? gD : gD * aspect;
+      placeNode(node, pts[i].x, pts[i].y, ww, ww / aspect, i * 70);
     });
 
     // collaborators: one each, on the outer ring at the average angle of the games they worked on
     const rx2 = w / 2 - small / 2 - 12;
     const ry2 = Math.min(h / 2 - small / 2 - 26, ry1 * (rx2 / rx1));
     const placed = solar.collab.map(d => {
-      const mine = solar.games.map((g, i) => ((g.credits ?? []).some(c => c.toLowerCase() === d.item.name.toLowerCase()) ? i : -1)).filter(i => i >= 0);
+      const mine = solar.planets.map((p, i) => ((p.game.credits ?? []).some(c => c.toLowerCase() === d.item.name.toLowerCase()) ? i : -1)).filter(i => i >= 0);
       const sx = mine.reduce((sum, i) => sum + Math.cos(angles[i]), 0);
       const sy = mine.reduce((sum, i) => sum + Math.sin(angles[i]), 0);
       return { d, t: Math.atan2(sy, sx) };
@@ -624,6 +696,7 @@
     projectRoles = {};
     launchActive = new Set();
     markSelectedPerson();
+    clearCenter();
     if (selectedPerson) enterSolar(selectedPerson);
     else leaveSolar();
     arrange();
