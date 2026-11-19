@@ -42,12 +42,12 @@ class CardGrid {
     GRID_REGISTRY[this.target] = [];
 
     const visible = items.filter(isVisible);
-    const groups = [visible.filter(item => !item.jam), visible.filter(item => item.jam)]
+    // pinLast games (Octane) always close the grid, after the main and jam groups
+    const groups = [visible.filter(item => !item.jam && !item.pinLast), visible.filter(item => item.jam), visible.filter(item => item.pinLast)]
       .map(group => group.sort(byOrder))
       .filter(group => group.length);
     let i = 0;
-    groups.forEach((group, g) => {
-      if (g > 0) grid.appendChild(el('hr', 'work-divider'));
+    groups.forEach(group => {
       group.forEach(item => {
         const card = def.buildCard(item, i++);
         if (item.draft) card.classList.add('is-draft');
@@ -57,6 +57,80 @@ class CardGrid {
     });
   }
 }
+
+// ── Selection ────────────────────────────────────────────────────────────────
+
+let selected = null;
+let selectedPersonName = null;
+
+const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
+
+// One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
+function launchOf(item) {
+  const links = item.links ?? {};
+  const list = [];
+  if (links.play)  list.push({ kind: 'bbox',  url: links.play,  label: 'BeetleBox', image: BEETLE_ICON });
+  if (links.itch)  list.push({ kind: 'itch',  url: links.itch,  label: 'itch.io',   icon: 'fa-brands fa-itch-io' });
+  if (links.steam) list.push({ kind: 'steam', url: links.steam, label: 'Steam',     icon: 'fa-brands fa-steam' });
+  return list;
+}
+
+function setSelected(card, item) {
+  if (selected) {
+    selected.card.classList.remove('is-selected');
+    selected.card.setAttribute('aria-pressed', 'false');
+  }
+  selected = card ? { card, item } : null;
+  showRelated(null);
+  if (card) {
+    card.classList.add('is-selected');
+    card.setAttribute('aria-pressed', 'true');
+  }
+  window.dispatchEvent(new CustomEvent('team:select', {
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item) } : null,
+  }));
+}
+
+// Outline the games a selected creator worked on and dim the rest
+function showRelated(name) {
+  selectedPersonName = name;
+  (GRID_REGISTRY['games-grid'] ?? []).forEach(({ item, card }) => {
+    const related = !!name && (item.credits ?? []).some(c => c.toLowerCase() === name.toLowerCase());
+    card.classList.toggle('is-related', related);
+    card.classList.toggle('is-dim', !!name && !related);
+  });
+}
+
+// a game circle in the creator view was clicked: select that game
+window.addEventListener('game:pick', e => {
+  const entry = (GRID_REGISTRY['games-grid'] ?? []).find(({ item }) => item.title === e.detail);
+  if (entry) setSelected(entry.card, entry.item);
+});
+
+window.addEventListener('person:select', e => {
+  const name = e.detail;
+  if (name && selected) {
+    selected.card.classList.remove('is-selected');
+    selected.card.setAttribute('aria-pressed', 'false');
+    selected = null;
+  }
+  showRelated(name);
+});
+
+function toggleSelected(card, item) {
+  setSelected(selected?.card === card ? null : card, item);
+}
+
+document.addEventListener('click', e => {
+  if (e.target.closest('.work-card, #people-grid')) return;
+  if (selected) setSelected(null);
+  if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (selected) setSelected(null);
+  if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
+});
 
 // ── Card type definitions ─────────────────────────────────────────────────────
 
@@ -138,10 +212,17 @@ const CARD_TYPES = {
       if (item.links?.play) {
         info.appendChild(playLink(item, 'work-play'));
       }
-      const target = item.links?.itch || item.links?.steam || item.links?.play;
-      if (target) {
-        card.addEventListener('click', () => { window.open(target, '_blank', 'noopener'); });
-      }
+      // Clicking selects the game: its creators stay in the right panel along with a launch
+      // capsule, so their links stay reachable. Launching happens from the capsule.
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-pressed', 'false');
+      card.addEventListener('click', () => toggleSelected(card, item));
+      card.addEventListener('keydown', e => {
+        if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        toggleSelected(card, item);
+      });
 
       const linkDefs = [
         { key: 'trailer', icon: 'fa-brands fa-youtube',  label: 'Trailer' },

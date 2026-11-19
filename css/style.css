@@ -14,8 +14,10 @@
   --text:       oklch(0.92 0.005 var(--hue));
   --text-dim:   oklch(0.76 0.01  var(--hue));
   --text-muted: oklch(0.64 0.008 var(--hue));
-  --border:     color-mix(in oklch, white 7%, transparent);
-  --border-strong: color-mix(in oklch, white 14%, transparent);
+  --panel-mix:  oklch(0.12 0.02 var(--hue));
+  --ink:        white;                            /* overlay tint: white on dark, black on light */
+  --border:     color-mix(in oklch, var(--ink) 7%, transparent);
+  --border-strong: color-mix(in oklch, var(--ink) 14%, transparent);
   --radius:     12px;
   --radius-lg:  16px;
   --page-width: 1100px;
@@ -26,6 +28,33 @@
   /* hero accent — JS can override this per-viz, but defaults to --primary */
   --accent:     var(--primary);
 }
+
+/* ── Light theme — set by theme.js from the system preference unless overridden ── */
+:root[data-theme="light"] {
+  --page-bg:    oklch(0.97 0.008 var(--hue));
+  --card-bg:    oklch(0.995 0.004 var(--hue));
+  --float-bg:   oklch(0.955 0.01 var(--hue));
+  --text:       oklch(0.22 0.01 var(--hue));
+  --text-dim:   oklch(0.38 0.012 var(--hue));
+  --text-muted: oklch(0.5 0.01 var(--hue));
+  --panel-mix:  oklch(0.93 0.02 var(--hue));
+  --ink:        black;
+  --shadow:     0 2px 12px rgba(0,0,0,0.12);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.2);
+  color-scheme: light;
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+/* theme change: the new theme is clipped to a growing circle (see theme.js), the old one stays put beneath */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+/* the white beetle badge and logo flip to black on the light theme */
+:root[data-theme="light"] .team-badge,
+:root[data-theme="light"] .team-launch-logo { filter: invert(1); }
 
 /* ── Reset ──────────────────────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -140,7 +169,7 @@ h1, h2, h3, h4, h5, h6, p, a {
 }
 .nav-btn:hover {
   color: var(--text);
-  background: color-mix(in oklch, white 6%, transparent);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 .nav-btn:active { transform: scale(0.95); }
 
@@ -186,7 +215,7 @@ h1, h2, h3, h4, h5, h6, p, a {
 }
 .nav-dropdown-item:hover {
   color: var(--text);
-  background: color-mix(in oklch, white 6%, transparent);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .navbar-actions {
@@ -210,9 +239,13 @@ h1, h2, h3, h4, h5, h6, p, a {
   cursor: pointer;
   transition: color 0.15s var(--ease), background 0.15s var(--ease);
 }
+.theme-btn .fa-sun { display: none; }
+:root[data-theme="light"] .theme-btn .fa-sun { display: inline; }
+:root[data-theme="light"] .theme-btn .fa-moon { display: none; }
+.settings-reset[hidden] { display: none; }
 .icon-btn:hover {
   color: var(--text);
-  background: color-mix(in oklch, white 6%, transparent);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 .icon-btn:active { transform: scale(0.92); }
 
@@ -280,7 +313,7 @@ h1, h2, h3, h4, h5, h6, p, a {
   transition: background 0.12s var(--ease), color 0.12s var(--ease);
 }
 .lang-option:hover {
-  background: color-mix(in oklch, white 7%, transparent);
+  background: color-mix(in oklch, var(--ink) 7%, transparent);
   color: var(--text);
 }
 .lang-option[aria-selected="true"] {
@@ -500,18 +533,25 @@ mark.search-hl.search-hl--current {
   overflow: hidden;
 }
 
-.work-divider {
-  grid-column: 1 / -1;
-  height: 1px;
-  margin: 0.25rem 0;
-  border: 0;
-  background: var(--border-strong);
-}
 .work-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 .work-card:active { transform: scale(0.98); }
+.work-card { position: relative; }
+/* Selection ring drawn inside the card, above the artwork, so neighbours and the grid edge never clip it */
+.work-card.is-selected::after,
+.work-card.is-related::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border: 2px solid var(--primary);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.work-card.is-dim { opacity: 0.45; }
+.work-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .work-img-wrap {
   position: relative;
@@ -699,7 +739,7 @@ mark.search-hl.search-hl--current {
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   color: var(--text-muted);
-  background: color-mix(in oklch, white 5%, transparent);
+  background: color-mix(in oklch, var(--ink) 5%, transparent);
   border: 1px solid var(--border);
 }
 /* Fixed green — does not follow the accent colour picker */
@@ -712,6 +752,12 @@ mark.search-hl.search-hl--current {
   color: oklch(0.8 0.14 80);
   background: color-mix(in oklch, oklch(0.8 0.14 80) 10%, transparent);
   border-color: color-mix(in oklch, oklch(0.8 0.14 80) 25%, transparent);
+}
+
+.work-status[data-status="upcoming"] {
+  color: oklch(0.7 0.19 25);
+  background: color-mix(in oklch, oklch(0.7 0.19 25) 10%, transparent);
+  border-color: color-mix(in oklch, oklch(0.7 0.19 25) 25%, transparent);
 }
 
 .work-status[data-status="draft"] {
@@ -800,7 +846,7 @@ html.admin .admin-only { display: revert !important; }
   align-items: center;
   justify-content: center;
   border-radius: var(--radius);
-  background: color-mix(in oklch, white 5%, transparent);
+  background: color-mix(in oklch, var(--ink) 5%, transparent);
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 0.8rem;
@@ -998,7 +1044,7 @@ html.admin .admin-only { display: revert !important; }
 
 /* ── About section ───────────────────────────────────── */
 #about {
-  background: color-mix(in oklch, var(--page-bg) 80%, oklch(0.12 0.02 var(--hue)));
+  background: color-mix(in oklch, var(--page-bg) 80%, var(--panel-mix));
   border-top: 1px solid var(--border);
 }
 
@@ -1050,7 +1096,7 @@ html.admin .admin-only { display: revert !important; }
 
 /* ── People section ──────────────────────────────────── */
 #people {
-  background: color-mix(in oklch, var(--page-bg) 80%, oklch(0.12 0.02 var(--hue)));
+  background: color-mix(in oklch, var(--page-bg) 80%, var(--panel-mix));
   border-top: 1px solid var(--border);
 }
 
@@ -1231,7 +1277,7 @@ html.admin .admin-only { display: revert !important; }
 
 /* ── Footer ─────────────────────────────────────────── */
 #site-footer {
-  border-top: 1px dashed color-mix(in oklch, white 10%, transparent);
+  border-top: 1px dashed color-mix(in oklch, var(--ink) 10%, transparent);
   padding: 2rem 1.5rem 2.5rem;
   animation: fade-in-up 0.4s var(--ease) both;
   animation-delay: 200ms;
@@ -1296,7 +1342,7 @@ body {
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: color-mix(in oklch, var(--page-bg) 80%, oklch(0.12 0.02 var(--hue)));
+  background: color-mix(in oklch, var(--page-bg) 80%, var(--panel-mix));
   min-height: 0;
   overflow: hidden;
 }
@@ -1462,6 +1508,63 @@ body {
 }
 .team-node--focus .team-node-name { color: var(--primary); }
 .team-node-name { transition: color 0.3s var(--ease); }
+.team-badge {
+  width: 14px;
+  height: 14px;
+  margin-right: 0.3rem;
+  vertical-align: -2px;
+  image-rendering: pixelated;
+}
+
+/* Launch capsule — appears beside a selected game's creators */
+.team-node--launch {
+  width: calc(var(--node-size) * 0.62);
+  height: calc(var(--node-size) * 0.62);
+  translate: calc(var(--node-size) * 0.19) calc(var(--node-size) * 0.19);
+}
+.team-node-launch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+  font-size: calc(var(--node-size) * 0.26);
+  text-decoration: none;
+}
+.team-launch-logo {
+  width: 62%;
+  height: 62%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.team-launch-play {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  z-index: 7;
+  width: 42%;
+  height: 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: calc(var(--node-size) * 0.14);
+  color: var(--page-bg);
+  background: var(--primary);
+  box-shadow: 0 0 0 2px var(--page-bg);
+  text-decoration: none;
+}
+.team-node--launch .team-node-name { color: var(--primary); }
+.team-node--selected .team-node-circle {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent),
+              0 0 0 6px color-mix(in oklch, var(--primary) 35%, transparent),
+              0 0 26px color-mix(in oklch, var(--primary) 55%, transparent);
+  transform: scale(1.08);
+}
+.team-node--selected .team-node-name { color: var(--primary); }
+.team-node-circle { cursor: pointer; }
+.team-node--launch .team-chip { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
 .team-node:hover .team-node-links {
   opacity: 1;
   transform: none;
@@ -1530,3 +1633,65 @@ body {
   }
 }
 
+
+/* ── Creator view: games orbit the selected creator ───────────────────────── */
+.team-game {
+  position: absolute;
+  z-index: 4;
+  display: block;
+  cursor: pointer;
+  transition: left 0.85s var(--ease), top 0.85s var(--ease);
+  animation: game-float var(--float, 7s) ease-in-out var(--fd, 0s) infinite alternate;
+}
+.team-game-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid color-mix(in oklch, var(--primary) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 22px color-mix(in oklch, var(--primary) 30%, transparent);
+  transition: box-shadow 0.3s var(--ease);
+}
+.team-game:hover .team-game-ring,
+.team-game:focus-visible .team-game-ring {
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 30px color-mix(in oklch, var(--primary) 65%, transparent);
+}
+/* the crop window drifts over the artwork like a magic ball, so more of the image shows over time */
+.team-game-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  animation: game-pan var(--pan, 11s) ease-in-out var(--fd, 0s) infinite alternate;
+}
+.team-game-label {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--page-bg) 85%, transparent);
+}
+.team-game-img--icon { image-rendering: pixelated; }
+@keyframes game-pan {
+  from { object-position: 0% 40%; transform: scale(1.1); }
+  to   { object-position: 100% 60%; transform: scale(1.4); }
+}
+@keyframes game-float {
+  from { translate: -6px -9px; }
+  to   { translate: 8px 9px; }
+}
+.team-node--small .team-node-roles,
+.team-node--small .team-node-links { display: none; }
+.team-node--small .team-node-name { font-size: 0.66rem; }
+@media (prefers-reduced-motion: reduce) {
+  .team-game, .team-game-img { animation: none; }
+}

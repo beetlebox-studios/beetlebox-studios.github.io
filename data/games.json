@@ -22,9 +22,7 @@
   },
   {
     "title": "Bubblefish",
-    "meta": "Unity 2D · Retro · 2026",
-    "order": 2,
-    "repo": "BubbleFish",
+    "meta": "Unity · Custom · Retro · 2026",
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
@@ -42,12 +40,7 @@
   },
   {
     "title": "Book Wyrm",
-    "meta": "Vite · TypeScript · Retro · 2026",
-    "order": 3,
-    "repo": "book-wyrm",
-    "stack": [
-      "vite"
-    ],
+    "meta": "Vite · TypeScript · Custom · Retro · 2026",
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
@@ -58,8 +51,10 @@
       "Max"
     ],
     "links": {
-      "play": "https://beetlebox-studios.github.io/games/lexwright/"
-    }
+      "play": "https://beetlebox-studios.github.io/games/lexwright/",
+      "itch": "https://elanmakesgames.itch.io/book-wyrm"
+    },
+    "favicon": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png"
   },
   {
     "title": "250 is...",
@@ -190,5 +185,22 @@
       "play": "https://beetlebox-studios.github.io/games/molith/",
       "itch": "https://elanmakesgames.itch.io/molith"
     }
+  },
+  {
+    "title": "Octane",
+    "meta": "Custom · Action · 2028",
+    "pinLast": true,
+    "status": "Upcoming",
+    "credits": [
+      "Elan"
+    ],
+    "roles": {
+      "Elan": [
+        "Game Designer"
+      ]
+    },
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/octane_thumbnail.png",
+    "gif": "",
+    "links": {}
   }
 ]

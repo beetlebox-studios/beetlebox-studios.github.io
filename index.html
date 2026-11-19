@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BeetleBox Studios</title>
   <link rel="icon" type="image/png" />
+  <script>
+    // Theme before first paint: saved choice, else the system preference
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('theme'); } catch (e) {}
+      var light = saved ? saved === 'light' : matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = light ? 'light' : 'dark';
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -20,6 +29,10 @@
     <a href="#" class="navbar-logo" aria-label="BeetleBox Studios"><span class="navbar-logo-mark"></span></a>
     <div class="navbar-actions">
       <span class="admin-only admin-pill">Admin</span>
+      <!-- Resets every setting changed from its default (language, accent color, …) -->
+      <button class="icon-btn settings-reset" id="settings-reset" aria-label="Reset settings" title="Reset settings" hidden>
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
       <!-- Language picker -->
       <div class="lang-wrap" id="lang-wrap">
         <button class="icon-btn lang-btn" id="lang-btn" aria-label="Select language" aria-expanded="false" aria-haspopup="listbox">
@@ -43,6 +56,10 @@
           </button>
         </div>
       </div>
+      <!-- Light / dark toggle -->
+      <button class="icon-btn theme-btn" id="theme-btn" aria-label="Switch between light and dark mode">
+        <i class="fa-solid fa-moon"></i><i class="fa-solid fa-sun"></i>
+      </button>
       <!-- Search -->
       <div class="search-wrap" id="search-wrap">
         <input type="text" id="search-input" placeholder="Search…" autocomplete="off" aria-label="Search page" />
@@ -118,6 +135,8 @@
 <script src="js/team.js"></script>
 
 <script src="js/search.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/theme.js"></script>
 <script src="js/accent.js"></script>
 <script src="js/translate.js"></script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
