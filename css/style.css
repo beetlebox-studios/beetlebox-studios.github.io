@@ -1600,3 +1600,67 @@ body {
   }
 }
 
+
+/* ── Creator view: games orbit the selected creator ───────────────────────── */
+.team-game {
+  position: absolute;
+  z-index: 4;
+  display: block;
+  opacity: 0;
+  scale: 0.6;
+  cursor: pointer;
+  transition: opacity 0.45s var(--ease), scale 0.45s var(--ease);
+  animation: game-float var(--float, 7s) ease-in-out var(--fd, 0s) infinite alternate;
+}
+.team-game.is-in { opacity: 1; scale: 1; }
+.team-game-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid color-mix(in oklch, var(--primary) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 22px color-mix(in oklch, var(--primary) 30%, transparent);
+  transition: box-shadow 0.3s var(--ease);
+}
+.team-game:hover .team-game-ring,
+.team-game:focus-visible .team-game-ring {
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 30px color-mix(in oklch, var(--primary) 65%, transparent);
+}
+/* the crop window drifts over the artwork like a magic ball, so more of the image shows over time */
+.team-game-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  animation: game-pan var(--pan, 11s) ease-in-out var(--fd, 0s) infinite alternate;
+}
+.team-game-label {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--page-bg) 85%, transparent);
+}
+@keyframes game-pan {
+  from { object-position: 0% 40%; transform: scale(1.1); }
+  to   { object-position: 100% 60%; transform: scale(1.4); }
+}
+@keyframes game-float {
+  from { translate: -3px -5px; }
+  to   { translate: 4px 5px; }
+}
+.team-node--small .team-node-roles,
+.team-node--small .team-node-links { display: none; }
+.team-node--small .team-node-name { font-size: 0.66rem; }
+@media (prefers-reduced-motion: reduce) {
+  .team-game, .team-game-img { animation: none; }
+}

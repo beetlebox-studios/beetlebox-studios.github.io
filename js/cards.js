@@ -93,6 +93,12 @@ function showRelated(name) {
   });
 }
 
+// a game circle in the creator view was clicked: select that game
+window.addEventListener('game:pick', e => {
+  const entry = (GRID_REGISTRY['games-grid'] ?? []).find(({ item }) => item.title === e.detail);
+  if (entry) setSelected(entry.card, entry.item);
+});
+
 window.addEventListener('person:select', e => {
   const name = e.detail;
   if (name && selected) {
