@@ -42,11 +42,12 @@ class CardGrid {
     GRID_REGISTRY[this.target] = [];
 
     const visible = items.filter(isVisible);
-    const groups = [visible.filter(item => !item.jam), visible.filter(item => item.jam)]
+    // pinLast games (Octane) always close the grid, after the main and jam groups
+    const groups = [visible.filter(item => !item.jam && !item.pinLast), visible.filter(item => item.jam), visible.filter(item => item.pinLast)]
       .map(group => group.sort(byOrder))
       .filter(group => group.length);
     let i = 0;
-    groups.forEach((group, g) => {
+    groups.forEach(group => {
       group.forEach(item => {
         const card = def.buildCard(item, i++);
         if (item.draft) card.classList.add('is-draft');
