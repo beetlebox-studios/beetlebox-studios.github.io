@@ -20,7 +20,7 @@
   },
   {
     "title": "Bubblefish",
-    "meta": "Unity 2D · Retro · 2026",
+    "meta": "Retik 3D (custom) · Unity · Retro · 2026",
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
@@ -38,7 +38,7 @@
   },
   {
     "title": "Book Wyrm",
-    "meta": "Vite · TypeScript · Retro · 2026",
+    "meta": "Retik 2D (custom) · Vite · TypeScript · Retro · 2026",
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",

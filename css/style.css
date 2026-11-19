@@ -769,6 +769,11 @@ html.admin .admin-only { display: revert !important; }
   text-transform: uppercase;
 }
 
+.work-engine {
+  color: oklch(0.78 0.16 55);
+  font-weight: 600;
+}
+
 .work-desc {
   font-size: 0.8rem;
   line-height: 1.65;

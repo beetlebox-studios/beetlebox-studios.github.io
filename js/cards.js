@@ -121,7 +121,7 @@ const CARD_TYPES = {
         titleRow.appendChild(status);
       }
       info.appendChild(titleRow);
-      info.appendChild(text('p', 'work-meta',  item.meta));
+      info.appendChild(metaLine(item.meta));
       if (item.description) {
         info.appendChild(text('p', 'work-desc', item.description));
       }
@@ -151,6 +151,16 @@ const CARD_TYPES = {
 };
 
 // ── Shared DOM helpers ────────────────────────────────────────────────────────
+
+// "Retik 2D (custom) · Vite · …" — the in-house engine label comes first and gets its own colour
+function metaLine(meta) {
+  const line = el('p', 'work-meta');
+  String(meta || '').split(' · ').forEach((part, i) => {
+    if (i > 0) line.appendChild(document.createTextNode(' · '));
+    line.appendChild(text('span', /^retik\b/i.test(part) ? 'work-engine' : '', part));
+  });
+  return line;
+}
 
 function el(tag, className) {
   const node = document.createElement(tag);
