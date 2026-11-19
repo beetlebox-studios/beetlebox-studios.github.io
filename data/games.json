@@ -1,5 +1,26 @@
 [
   {
+    "title": "Katami",
+    "meta": "Unity 2D · Puzzle · 2027",
+    "order": 1,
+    "repo": "PaperGame",
+    "status": "In Development",
+    "description": "A puzzle game about folding paper.",
+    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
+    "gif": "",
+    "credits": [
+      "Elan",
+      "Max",
+      "Ryan",
+      "AnglerFishArt",
+      "hutthutthutt",
+      "Mafgar"
+    ],
+    "links": {
+      "steam": "https://store.steampowered.com/app/3828230/KATAMI_A_Paper_Story/"
+    }
+  },
+  {
     "title": "Bubblefish",
     "meta": "Unity 2D · Retro · 2026",
     "order": 2,
@@ -94,30 +115,11 @@
       "Elan",
       "Max",
       "Ryan",
-      "Andrew"
+      "Andrew",
+      "Turple"
     ],
     "links": {
       "itch": "https://elanmakesgames.itch.io/sumo-square"
-    }
-  },
-  {
-    "title": "Katami",
-    "meta": "Unity 2D · Puzzle · 2026",
-    "order": 1,
-    "repo": "PaperGame",
-    "status": "In Development",
-    "description": "A puzzle game about folding paper.",
-    "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
-    "gif": "",
-    "credits": [
-      "Max",
-      "Ryan",
-      "AnglerFishArt",
-      "hutthutthutt",
-      "Mafgar"
-    ],
-    "links": {
-      "steam": "https://store.steampowered.com/app/3828230/KATAMI_A_Paper_Story/"
     }
   },
   {
