@@ -25,6 +25,31 @@
     window.dispatchEvent(new Event('settings:changed'));
   }
 
+  // Where the last click landed: the theme change spreads from there as a circular mask
+  let origin = { x: innerWidth / 2, y: innerHeight / 2 };
+  addEventListener('pointerdown', e => { origin = { x: e.clientX, y: e.clientY }; }, true);
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let running = null;
+
+  // Changes the theme inside a view transition so the new look is revealed through a growing circle.
+  // Browsers without view transitions (and reduced-motion users) just switch.
+  function reveal(change) {
+    if (!document.startViewTransition || reduceMotion.matches) { change(); return; }
+    if (running) { running.skipTransition(); }
+    const { x, y } = origin;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    const transition = document.startViewTransition(change);
+    running = transition;
+    transition.finished.finally(() => { if (running === transition) running = null; });
+    transition.ready.then(() => {
+      root.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+        { duration: 650, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
+      );
+    }).catch(() => {});
+  }
+
   const system = () => (query.matches ? 'light' : 'dark');
   let override = saved();
 
@@ -34,7 +59,7 @@
     e.stopPropagation();
     override = root.dataset.theme === 'light' ? 'dark' : 'light';
     store(override);
-    apply(override);
+    reveal(() => apply(override));
   });
 
   registerSetting({
@@ -42,7 +67,7 @@
     reset: () => {
       override = null;
       store(null);
-      apply(system());
+      reveal(() => apply(system()));
     },
   });
 })();
