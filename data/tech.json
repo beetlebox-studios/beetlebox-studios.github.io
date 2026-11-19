@@ -62,5 +62,11 @@
     "languages": [
       "CSS"
     ]
+  },
+  {
+    "id": "custom",
+    "label": "Custom",
+    "color": "8B1A1A",
+    "languages": []
   }
 ]
