@@ -1639,13 +1639,10 @@ body {
   position: absolute;
   z-index: 4;
   display: block;
-  opacity: 0;
-  scale: 0.6;
   cursor: pointer;
-  transition: opacity 0.45s var(--ease), scale 0.45s var(--ease);
+  transition: left 0.85s var(--ease), top 0.85s var(--ease);
   animation: game-float var(--float, 7s) ease-in-out var(--fd, 0s) infinite alternate;
 }
-.team-game.is-in { opacity: 1; scale: 1; }
 .team-game-ring {
   position: absolute;
   inset: 0;
@@ -1683,13 +1680,14 @@ body {
   border-radius: 6px;
   background: color-mix(in oklch, var(--page-bg) 85%, transparent);
 }
+.team-game-img--icon { image-rendering: pixelated; }
 @keyframes game-pan {
   from { object-position: 0% 40%; transform: scale(1.1); }
   to   { object-position: 100% 60%; transform: scale(1.4); }
 }
 @keyframes game-float {
-  from { translate: -3px -5px; }
-  to   { translate: 4px 5px; }
+  from { translate: -6px -9px; }
+  to   { translate: 8px 9px; }
 }
 .team-node--small .team-node-roles,
 .team-node--small .team-node-links { display: none; }

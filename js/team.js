@@ -481,7 +481,9 @@
     node.style.setProperty('--pan', `${9 + (i * 2.3) % 6}s`);
     node.style.setProperty('--fd', `${-(i * 1.3)}s`);
     const ring = el('div', 'team-game-ring');
-    if (game.image) ring.appendChild(makeImg(game.image, game.title, 'team-game-img'));
+    // the favicon is the planet when the game has one; otherwise the thumbnail is cropped
+    const art = game.favicon || game.image;
+    if (art) ring.appendChild(makeImg(art, game.title, game.favicon ? 'team-game-img team-game-img--icon' : 'team-game-img'));
     node.appendChild(ring);
     node.appendChild(text('span', 'team-game-label', game.title));
     const pick = () => window.dispatchEvent(new CustomEvent('game:pick', { detail: game.title }));
@@ -495,12 +497,25 @@
     return node;
   }
 
+  // Planets are never faded: the panel is a clip layer, so they slide past its edge and get cut off by it
+  function offscreen(x, y) {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    const dx = x - w / 2 || 1;
+    const dy = y - h / 2 || 1;
+    const k = Math.max(w, h) / Math.hypot(dx, dy);
+    return { x: w / 2 + dx * k * 1.2, y: h / 2 + dy * k * 1.2 };
+  }
+
   function clearGameNodes() {
     const old = gameNodes;
     gameNodes = [];
     old.forEach(n => {
-      n.classList.remove('is-in');
-      setTimeout(() => n.remove(), 450);
+      const d = parseFloat(n.style.width) / 2 || 0;
+      const out = offscreen(parseFloat(n.style.left) + d, parseFloat(n.style.top) + d);
+      n.style.left = `${out.x - d}px`;
+      n.style.top = `${out.y - d}px`;
+      setTimeout(() => n.remove(), 900);
     });
   }
 
@@ -549,10 +564,19 @@
     gameNodes.forEach((node, i) => {
       node.style.width = `${gD}px`;
       node.style.height = `${gD}px`;
+      if (!node.dataset.placed) {
+        // start beyond the panel edge, then drift into orbit
+        const out = offscreen(pts[i].x, pts[i].y);
+        node.style.transition = 'none';
+        node.style.left = `${out.x - gD / 2}px`;
+        node.style.top = `${out.y - gD / 2}px`;
+        node.getBoundingClientRect();
+        node.style.transition = '';
+        node.dataset.placed = '1';
+      }
+      node.style.transitionDelay = `${i * 70}ms`;
       node.style.left = `${pts[i].x - gD / 2}px`;
       node.style.top = `${pts[i].y - gD / 2}px`;
-      node.style.transitionDelay = `${i * 70}ms`;
-      node.classList.add('is-in');
     });
 
     // collaborators: one each, on the outer ring at the average angle of the games they worked on
