@@ -504,6 +504,10 @@ mark.search-hl.search-hl--current {
   box-shadow: var(--shadow-lg);
 }
 .work-card:active { transform: scale(0.98); }
+.work-card.is-selected {
+  box-shadow: 0 0 0 2px var(--primary), var(--shadow-lg);
+}
+.work-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .work-img-wrap {
   position: relative;
@@ -706,6 +710,12 @@ mark.search-hl.search-hl--current {
   border-color: color-mix(in oklch, oklch(0.8 0.14 80) 25%, transparent);
 }
 
+.work-status[data-status="upcoming"] {
+  color: oklch(0.7 0.19 25);
+  background: color-mix(in oklch, oklch(0.7 0.19 25) 10%, transparent);
+  border-color: color-mix(in oklch, oklch(0.7 0.19 25) 25%, transparent);
+}
+
 .work-status[data-status="draft"] {
   color: oklch(0.72 0.16 330);
   background: color-mix(in oklch, oklch(0.72 0.16 330) 10%, transparent);
@@ -767,11 +777,6 @@ html.admin .admin-only { display: revert !important; }
   letter-spacing: 0.08em;
   color: var(--text-muted);
   text-transform: uppercase;
-}
-
-.work-engine {
-  color: oklch(0.78 0.16 55);
-  font-weight: 600;
 }
 
 .work-desc {
@@ -1459,6 +1464,28 @@ body {
 }
 .team-node--focus .team-node-name { color: var(--primary); }
 .team-node-name { transition: color 0.3s var(--ease); }
+.team-badge {
+  width: 14px;
+  height: 14px;
+  margin-right: 0.3rem;
+  vertical-align: -2px;
+  image-rendering: pixelated;
+}
+
+/* Launch capsule — appears beside a selected game's creators */
+.team-node-launch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--page-bg);
+  background: var(--primary);
+  border-color: var(--primary);
+  font-size: calc(var(--node-size) * 0.34);
+  text-decoration: none;
+}
+.team-node--launch .team-node-name { color: var(--primary); }
+.team-node--launch .team-chip { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
 .team-node:hover .team-node-links {
   opacity: 1;
   transform: none;
