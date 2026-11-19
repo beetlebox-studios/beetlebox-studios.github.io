@@ -50,6 +50,44 @@ class CardGrid {
   }
 }
 
+// ── Selection ────────────────────────────────────────────────────────────────
+
+let selected = null;
+
+function launchOf(item) {
+  const links = item.links ?? {};
+  if (links.play)  return { url: links.play,  label: 'Play',   icon: 'fa-solid fa-play' };
+  if (links.steam) return { url: links.steam, label: 'Steam',  icon: 'fa-brands fa-steam' };
+  if (links.itch)  return { url: links.itch,  label: 'itch.io', icon: 'fa-brands fa-itch-io' };
+  return null;
+}
+
+function setSelected(card, item) {
+  if (selected) {
+    selected.card.classList.remove('is-selected');
+    selected.card.setAttribute('aria-pressed', 'false');
+  }
+  selected = card ? { card, item } : null;
+  if (card) {
+    card.classList.add('is-selected');
+    card.setAttribute('aria-pressed', 'true');
+  }
+  window.dispatchEvent(new CustomEvent('team:select', {
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item) } : null,
+  }));
+}
+
+function toggleSelected(card, item) {
+  setSelected(selected?.card === card ? null : card, item);
+}
+
+document.addEventListener('click', e => {
+  if (selected && !e.target.closest('.work-card, #people-grid')) setSelected(null);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && selected) setSelected(null);
+});
+
 // ── Card type definitions ─────────────────────────────────────────────────────
 
 const CARD_TYPES = {
@@ -130,10 +168,17 @@ const CARD_TYPES = {
       if (item.links?.play) {
         info.appendChild(playLink(item, 'work-play'));
       }
-      const target = item.links?.itch || item.links?.steam || item.links?.play;
-      if (target) {
-        card.addEventListener('click', () => { window.open(target, '_blank', 'noopener'); });
-      }
+      // Clicking selects the game: its creators stay in the right panel along with a launch
+      // capsule, so their links stay reachable. Launching happens from the capsule.
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-pressed', 'false');
+      card.addEventListener('click', () => toggleSelected(card, item));
+      card.addEventListener('keydown', e => {
+        if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        toggleSelected(card, item);
+      });
 
       const linkDefs = [
         { key: 'trailer', icon: 'fa-brands fa-youtube',  label: 'Trailer' },

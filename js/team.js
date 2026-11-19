@@ -29,6 +29,8 @@
   const FADE          = 36;
   const GAP           = 10;
 
+  const BEETLE_BADGE = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
+
   const LINK_DEFS = [
     { key: 'personal',   icon: 'fa-solid fa-globe',       label: 'Personal site' },
     { key: 'twitter',    icon: 'fa-brands fa-x-twitter',  label: 'Twitter/X' },
@@ -49,6 +51,9 @@
   let decorEdges = [];
   let devLines = [];
   let focus = null;
+  let selected = false;
+  let launchActive = false;
+  let launchDev = null;
   let projectRoles = {};
   let roleOrder = [];
   let size = 72;
@@ -113,7 +118,17 @@
     node.appendChild(circle);
 
     const label = el('div', 'team-node-label');
-    label.appendChild(text('p', 'team-node-name', item.name));
+    const name = text('p', 'team-node-name', '');
+    if (item.founder) {
+      const badge = makeImg(BEETLE_BADGE, 'Founding member', 'team-badge');
+      badge.width = 14;
+      badge.height = 14;
+      badge.title = 'Founding member';
+      badge.loading = 'eager';
+      name.appendChild(badge);
+    }
+    name.appendChild(document.createTextNode(item.name));
+    label.appendChild(name);
     label.appendChild(el('div', 'team-node-roles'));
 
     const links = LINK_DEFS.filter(d => item.links?.[d.key]);
@@ -132,6 +147,30 @@
     }
     node.appendChild(label);
     return node;
+  }
+
+  // The launch capsule: a circle that appears next to the creators of the selected game
+  function buildLaunchNode() {
+    const node = el('div', 'team-node team-node--launch');
+    const circle = el('a', 'team-node-circle team-node-launch');
+    circle.target = '_blank';
+    circle.rel = 'noopener';
+    node.appendChild(circle);
+    const label = el('div', 'team-node-label');
+    label.appendChild(text('p', 'team-node-name', 'Play'));
+    label.appendChild(el('div', 'team-node-roles'));
+    node.appendChild(label);
+    return node;
+  }
+
+  function setLaunch(launchInfo, title) {
+    if (!launchDev || !launchInfo) return;
+    const circle = launchDev.node.querySelector('.team-node-launch');
+    circle.href = launchInfo.url;
+    circle.setAttribute('aria-label', `${launchInfo.label}: ${title}`);
+    circle.innerHTML = `<i class="${launchInfo.icon}"></i>`;
+    launchDev.node.querySelector('.team-node-name').textContent = launchInfo.label;
+    launchDev.roles = [title];
   }
 
   function sortRoles(roles, who) {
@@ -235,8 +274,10 @@
     const h = container.clientHeight;
     if (!w || !h || !devs.length) return;
 
-    let shown = devs.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
-    if (!shown.length) shown = devs;
+    const people = devs.filter(d => !d.launch);
+    let shown = people.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
+    if (!shown.length) shown = people;
+    if (launchActive && launchDev) shown = [...shown, launchDev];
     devs.forEach(d => {
       const own = focus && projectRoles[d.item.name];
       setChips(d, own ? sortRoles(own, d.item.name) : d.roles);
@@ -368,7 +409,19 @@
     });
   }).observe(container);
 
+  window.addEventListener('team:select', e => {
+    clearTimeout(release);
+    const pick = e.detail;
+    selected = !!pick;
+    focus = pick?.credits?.length ? new Set(pick.credits.map(n => n.toLowerCase())) : null;
+    projectRoles = pick?.roles ?? {};
+    launchActive = !!pick?.launch;
+    if (launchActive) setLaunch(pick.launch, pick.title);
+    arrange();
+  });
+
   window.addEventListener('team:focus', e => {
+    if (selected) return;
     clearTimeout(release);
     const credits = e.detail?.credits;
     const next = credits?.length ? new Set(credits.map(n => n.toLowerCase())) : null;
@@ -398,6 +451,12 @@
       setChips(d, d.roles);
       return d;
     });
+    const launchNode = buildLaunchNode();
+    launchNode.style.setProperty('--delay', '0ms');
+    container.appendChild(launchNode);
+    launchDev = { item: { name: '__launch__', roles: [], links: {} }, launch: true, node: launchNode,
+      label: launchNode.querySelector('.team-node-label'), roles: [], links: 0, x: 0, y: 0, a: 0, ta: 0 };
+    devs.push(launchDev);
     buildWeb();
     arrange();
     requestAnimationFrame(tick);
