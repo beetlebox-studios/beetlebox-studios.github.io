@@ -131,6 +131,7 @@ function clearBraille() {
       // Re-picking the active language only needs to drop Braille
       if (lang.code !== currentLang) setLanguage(lang.code);
       closeDropdown();
+      window.dispatchEvent(new Event('settings:changed'));
     });
   });
 
@@ -141,6 +142,18 @@ function clearBraille() {
     updateSelected(BRAILLE.code);
     updateButtonIcon(BRAILLE);
     closeDropdown();
+    window.dispatchEvent(new Event('settings:changed'));
+  });
+
+  registerSetting({
+    isDefault: () => currentLang === 'en' && !brailleStyle,
+    reset: () => {
+      const english = LANGUAGES.find(l => l.code === 'en') || LANGUAGES[0];
+      clearBraille();
+      updateSelected(english.code);
+      updateButtonFlag(english);
+      if (currentLang !== 'en') setLanguage('en');
+    },
   });
 
   // Set initial button state
