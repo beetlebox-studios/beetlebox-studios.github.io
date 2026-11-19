@@ -91,8 +91,14 @@ function updateFavicon(hex) {
   }
 }
 
+let currentVal = DEFAULT_VAL;
+
 function applyVal(val) {
-  const { l, c, h } = lerpStop(val);
+  currentVal = val;
+  const stop = lerpStop(val);
+  // the accent is darkened on the light theme so text and rings stay readable
+  const l = document.documentElement.dataset.theme === 'light' ? stop.l * 0.8 : stop.l;
+  const { c, h } = stop;
   const oklchStr = `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${h})`;
   document.documentElement.style.setProperty('--primary', oklchStr);
 
@@ -109,7 +115,10 @@ function applyVal(val) {
   const orb = document.getElementById('accent-orb');
   if (orb) orb.style.background = hex;
   updateFavicon(hex);
+  window.dispatchEvent(new Event('settings:changed'));
 }
+
+window.addEventListener('theme:changed', () => applyVal(currentVal));
 
 (function initAccent() {
   applyVal(DEFAULT_VAL);
@@ -124,6 +133,14 @@ function applyVal(val) {
   slider.step  = 1;
   slider.value = DEFAULT_VAL * 1000;
   slider.addEventListener('input', () => applyVal(Number(slider.value) / 1000));
+
+  registerSetting({
+    isDefault: () => currentVal === DEFAULT_VAL,
+    reset: () => {
+      slider.value = DEFAULT_VAL * 1000;
+      applyVal(DEFAULT_VAL);
+    },
+  });
 
   resetBtn.addEventListener('click', (e) => {
     e.stopPropagation();

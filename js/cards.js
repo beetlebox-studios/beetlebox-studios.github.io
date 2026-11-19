@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -41,11 +41,19 @@ class CardGrid {
     // Register entries so other grids can look them up
     GRID_REGISTRY[this.target] = [];
 
-    items.filter(isVisible).forEach((item, i) => {
-      const card = def.buildCard(item, i);
-      if (item.draft) card.classList.add('is-draft');
-      GRID_REGISTRY[this.target].push({ item, card });
-      grid.appendChild(card);
+    const visible = items.filter(isVisible);
+    // pinLast games (Octane) always close the grid, after the main and jam groups
+    const groups = [visible.filter(item => !item.jam && !item.pinLast), visible.filter(item => item.jam), visible.filter(item => item.pinLast)]
+      .map(group => group.sort(byOrder))
+      .filter(group => group.length);
+    let i = 0;
+    groups.forEach(group => {
+      group.forEach(item => {
+        const card = def.buildCard(item, i++);
+        if (item.draft) card.classList.add('is-draft');
+        GRID_REGISTRY[this.target].push({ item, card });
+        grid.appendChild(card);
+      });
     });
   }
 }
@@ -53,13 +61,18 @@ class CardGrid {
 // ── Selection ────────────────────────────────────────────────────────────────
 
 let selected = null;
+let selectedPersonName = null;
 
+const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
+
+// One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
 function launchOf(item) {
   const links = item.links ?? {};
-  if (links.play)  return { url: links.play,  label: 'Play',   icon: 'fa-solid fa-play' };
-  if (links.steam) return { url: links.steam, label: 'Steam',  icon: 'fa-brands fa-steam' };
-  if (links.itch)  return { url: links.itch,  label: 'itch.io', icon: 'fa-brands fa-itch-io' };
-  return null;
+  const list = [];
+  if (links.play)  list.push({ kind: 'bbox',  url: links.play,  label: 'BeetleBox', image: BEETLE_ICON });
+  if (links.itch)  list.push({ kind: 'itch',  url: links.itch,  label: 'itch.io',   icon: 'fa-brands fa-itch-io' });
+  if (links.steam) list.push({ kind: 'steam', url: links.steam, label: 'Steam',     icon: 'fa-brands fa-steam' });
+  return list;
 }
 
 function setSelected(card, item) {
@@ -68,6 +81,7 @@ function setSelected(card, item) {
     selected.card.setAttribute('aria-pressed', 'false');
   }
   selected = card ? { card, item } : null;
+  showRelated(null);
   if (card) {
     card.classList.add('is-selected');
     card.setAttribute('aria-pressed', 'true');
@@ -77,15 +91,45 @@ function setSelected(card, item) {
   }));
 }
 
+// Outline the games a selected creator worked on and dim the rest
+function showRelated(name) {
+  selectedPersonName = name;
+  (GRID_REGISTRY['games-grid'] ?? []).forEach(({ item, card }) => {
+    const related = !!name && (item.credits ?? []).some(c => c.toLowerCase() === name.toLowerCase());
+    card.classList.toggle('is-related', related);
+    card.classList.toggle('is-dim', !!name && !related);
+  });
+}
+
+// a game circle in the creator view was clicked: select that game
+window.addEventListener('game:pick', e => {
+  const entry = (GRID_REGISTRY['games-grid'] ?? []).find(({ item }) => item.title === e.detail);
+  if (entry) setSelected(entry.card, entry.item);
+});
+
+window.addEventListener('person:select', e => {
+  const name = e.detail;
+  if (name && selected) {
+    selected.card.classList.remove('is-selected');
+    selected.card.setAttribute('aria-pressed', 'false');
+    selected = null;
+  }
+  showRelated(name);
+});
+
 function toggleSelected(card, item) {
   setSelected(selected?.card === card ? null : card, item);
 }
 
 document.addEventListener('click', e => {
-  if (selected && !e.target.closest('.work-card, #people-grid')) setSelected(null);
+  if (e.target.closest('.work-card, #people-grid')) return;
+  if (selected) setSelected(null);
+  if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && selected) setSelected(null);
+  if (e.key !== 'Escape') return;
+  if (selected) setSelected(null);
+  if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
 });
 
 // ── Card type definitions ─────────────────────────────────────────────────────
