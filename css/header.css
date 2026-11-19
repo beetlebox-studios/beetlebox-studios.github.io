@@ -5,6 +5,7 @@
   --text:       oklch(0.92 0.005 var(--hue, 140));
   --text-dim:   oklch(0.76 0.01  var(--hue, 140));
   --text-muted: oklch(0.64 0.008 var(--hue, 140));
+  --ink:        white;
   --border:     color-mix(in oklch, var(--ink) 7%, transparent);
   --border-strong: color-mix(in oklch, var(--ink) 14%, transparent);
   --radius:     12px;
@@ -16,6 +17,18 @@
   --ease:       cubic-bezier(0.25, 0.46, 0.45, 0.94);
   font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   color: var(--text);
+}
+/* light theme (set on <html> by theme.js): the header keeps its own copy of the tokens */
+:root[data-theme="light"] #navbar {
+  --page-bg:    oklch(0.97 0.008 var(--hue, 140));
+  --card-bg:    oklch(0.995 0.004 var(--hue, 140));
+  --float-bg:   oklch(0.955 0.01 var(--hue, 140));
+  --text:       oklch(0.22 0.01 var(--hue, 140));
+  --text-dim:   oklch(0.38 0.012 var(--hue, 140));
+  --text-muted: oklch(0.5 0.01 var(--hue, 140));
+  --ink:        black;
+  --shadow:     0 2px 12px rgba(0,0,0,0.12);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.2);
 }
 :where(:root) {
   --primary:     oklch(0.75 0.18 var(--hue, 140));
