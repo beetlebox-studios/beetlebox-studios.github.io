@@ -1248,3 +1248,9 @@ body {
   pointer-events: none;
 }
 .team-cover-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* stickers are decoration: clicking them does nothing */
+.team-game--sticker { pointer-events: none; }
+/* role chips select a role */
+.team-node:not(.team-node--launch) .team-chip { cursor: pointer; }
+.team-chip--selected { outline: 2px solid var(--primary); outline-offset: 1px; }

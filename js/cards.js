@@ -62,6 +62,7 @@ class CardGrid {
 
 let selected = null;
 let selectedPersonName = null;
+let selectedRoleName = null;
 
 const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
@@ -101,13 +102,14 @@ function setSelected(card, item) {
     syncGif(card);
   }
   window.dispatchEvent(new CustomEvent('team:select', {
-    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: item.favicons ?? [], cover: item.gif || item.image || '' } : null,
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: item.favicons ?? [], cover: item.image || '' } : null,
   }));
 }
 
 // Outline the games a selected creator worked on and dim the rest
 function showRelated(name) {
   selectedPersonName = name;
+  selectedRoleName = null;
   (GRID_REGISTRY['games-grid'] ?? []).forEach(({ item, card }) => {
     const related = !!name && (item.credits ?? []).some(c => c.toLowerCase() === name.toLowerCase());
     card.classList.toggle('is-related', related);
@@ -119,6 +121,28 @@ function showRelated(name) {
 window.addEventListener('game:pick', e => {
   const entry = (GRID_REGISTRY['games-grid'] ?? []).find(({ item }) => item.title === e.detail);
   if (entry) setSelected(entry.card, entry.item);
+});
+
+// Outline the games where someone worked in the selected role
+function showRelatedRole(role) {
+  selectedRoleName = role;
+  (GRID_REGISTRY['games-grid'] ?? []).forEach(({ item, card }) => {
+    const related = !!role && Object.values(item.roles ?? {}).some(list => list.includes(role));
+    card.classList.toggle('is-related', related);
+    card.classList.toggle('is-dim', !!role && !related);
+  });
+}
+
+window.addEventListener('role:select', e => {
+  const role = e.detail;
+  if (role && selected) {
+    selected.card.classList.remove('is-selected');
+    selected.card.setAttribute('aria-pressed', 'false');
+    syncGif(selected.card);
+    selected = null;
+  }
+  selectedPersonName = null;
+  showRelatedRole(role);
 });
 
 window.addEventListener('person:select', e => {
@@ -140,11 +164,13 @@ document.addEventListener('click', e => {
   if (e.target.closest('.work-card, #people-grid')) return;
   if (selected) setSelected(null);
   if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
+  if (selectedRoleName) window.dispatchEvent(new CustomEvent('role:clear'));
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (selected) setSelected(null);
   if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
+  if (selectedRoleName) window.dispatchEvent(new CustomEvent('role:clear'));
 });
 
 // ── Card type definitions ─────────────────────────────────────────────────────
