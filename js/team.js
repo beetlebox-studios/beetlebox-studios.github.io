@@ -148,7 +148,11 @@
     if (d.chips === key) return;
     d.chips = key;
     const row = d.label.querySelector('.team-node-roles');
-    row.replaceChildren(...roles.map(r => text('span', 'team-chip', r)));
+    row.replaceChildren(...roles.map(r => {
+      const chip = text('span', 'pill team-chip', r);
+      chip.style.setProperty('--shift', Math.round(Math.max(roleOrder.indexOf(r), 0) * 360 / Math.max(roleOrder.length, 1)));
+      return chip;
+    }));
   }
 
   // ── Layout + web ───────────────────────────────────────────────────────────

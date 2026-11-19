@@ -85,10 +85,15 @@ const CARD_TYPES = {
       // starts from frame 1 each time (browsers restart a GIF when src is set).
       // On mouseleave src is cleared, stopping playback and freeing memory.
       if (item.gif && !item.draft) {
-        const gifEl = makeImg('', item.title, 'work-gif');
+        const gifEl = el('img', 'work-gif');
+        gifEl.alt = '';
         gifEl.setAttribute('aria-hidden', 'true');
+        gifEl.addEventListener('load', () => { if (gifEl.getAttribute('src')) gifEl.classList.add('is-loaded'); });
         card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
-        card.addEventListener('mouseleave', () => { gifEl.src = ''; });
+        card.addEventListener('mouseleave', () => {
+          gifEl.classList.remove('is-loaded');
+          gifEl.removeAttribute('src');
+        });
         imgWrap.appendChild(gifEl);
       }
 
@@ -114,7 +119,7 @@ const CARD_TYPES = {
       }
 
       if (item.draft) {
-        const draft = text('span', 'work-status work-draft-badge', 'Draft');
+        const draft = text('span', 'pill work-status work-draft-badge', 'Draft');
         draft.dataset.status = 'draft';
         imgWrap.appendChild(draft);
       }
@@ -124,7 +129,7 @@ const CARD_TYPES = {
       const titleRow = el('div', 'work-title-row');
       titleRow.appendChild(text('p', 'work-title', item.title));
       if (item.status) {
-        const status = text('span', 'work-status', item.status);
+        const status = text('span', 'pill work-status', item.status);
         status.dataset.status = item.status.toLowerCase().replace(/\s+/g, '-');
         titleRow.appendChild(status);
       }
