@@ -7,7 +7,8 @@
     "status": "In Development",
     "description": "A puzzle game about folding paper.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
-    "gif": "",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/katami.png",
+    "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/katami.gif",
     "credits": [
       "Elan",
       "Max",
@@ -26,6 +27,7 @@
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/bubblefish.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/bubblefish.gif",
     "credits": [
       "Elan",
@@ -44,6 +46,7 @@
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/bookwyrm.png",
     "screenshot": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/screenshots/bookwyrm_playfield.png",
     "gif": "",
     "credits": [
@@ -55,8 +58,7 @@
       "itch": "https://elanmakesgames.itch.io/book-wyrm"
     },
     "favicons": [
-      "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png",
-      "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm_cover.png"
+      "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png"
     ]
   },
   {
@@ -67,7 +69,8 @@
     "status": "Released",
     "description": "As our Nation turns 250, what does this number even mean? A number trivia game.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/250is_thumbnail.png",
-    "gif": "",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/250is.png",
+    "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/250is.gif",
     "jam": {
       "label": "JAM",
       "logo": "images/jams/250-is.png"
@@ -104,7 +107,8 @@
     "repo": "sumo-square",
     "status": "In Development",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
-    "gif": "",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/sumosquare.png",
+    "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/sumo.gif",
     "jam": {
       "label": "JAM",
       "logo": "images/jams/sumo-square.png"
@@ -127,7 +131,8 @@
     "repo": "NumberGame",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
-    "gif": "",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/learntocount.png",
+    "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/learntocount.gif",
     "jam": {
       "label": "GMTK",
       "logo": "images/jams/learn-to-count.png"
@@ -150,6 +155,7 @@
     "status": "Released",
     "description": "Infiltrate a bizarre, masked cult.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/masknum_thumbnail.png",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/masknumopus.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mask.gif",
     "jam": {
       "label": "JAM",
@@ -174,6 +180,7 @@
     "status": "Released",
     "description": "Explore a mysterious field.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/molith_thumbnail.png",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/molith.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mono.gif",
     "jam": {
       "label": "JAM",
@@ -203,6 +210,7 @@
       ]
     },
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/octane_thumbnail.png",
+    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/octane.png",
     "gif": "",
     "links": {}
   }

@@ -102,7 +102,7 @@ function setSelected(card, item) {
     syncGif(card);
   }
   window.dispatchEvent(new CustomEvent('team:select', {
-    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: item.favicons ?? [], cover: item.image || '' } : null,
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: stickersOf(item), cover: item.image || '' } : null,
   }));
 }
 

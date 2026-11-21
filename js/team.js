@@ -334,10 +334,6 @@
   // spot with the same spring the people circles use. Objects that are not in the current view park
   // themselves beyond the panel edge, which clips them. ──────────────────────────────────────────────
 
-  function stickersOf(game) {
-    return game.favicons ?? [];
-  }
-
   // width / height of an image, so stickers and covers keep their shape; circles are 1
   function preload(src) {
     if (!src || aspects.has(src)) return;
@@ -345,8 +341,10 @@
     const img = new Image();
     img.onload = () => {
       aspects.set(src, img.naturalWidth / img.naturalHeight);
+      if (img.naturalWidth <= 128) bodies.filter(b => b.src === src && b.kind === 'sticker').forEach(b => b.node.classList.add('team-game--pixel'));
       arrange();
     };
+    img.onerror = () => dropSticker(src);
     img.src = src;
   }
 
@@ -382,6 +380,17 @@
       kind, game, src, node, i, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, w: 0, h: 0, active: false,
       p1: i * 1.9 + 0.5, p2: i * 2.7 + 1.3, f1: 0.0017 + (i % 5) * 0.0002, f2: 0.0014 + (i % 7) * 0.00017,
     };
+  }
+
+  function dropSticker(src) {
+    const gone = bodies.filter(b => b.src === src && b.kind === 'sticker');
+    if (!gone.length) return;
+    gone.forEach(b => b.node.remove());
+    bodies = bodies.filter(b => !gone.includes(b));
+    gone.forEach(({ game }) => {
+      if (game.image && !bodies.some(b => b.game === game && b.kind !== 'cover')) bodies.push(buildBody('planet', game, game.image, bodies.length));
+    });
+    arrange();
   }
 
   function buildBodies() {
