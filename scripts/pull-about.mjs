@@ -15,7 +15,6 @@ async function readme(repo) {
   return res.text();
 }
 
-// The house README shape: a thumbnail, a one-line pitch, a play link, then `---` and an `## About` section.
 function parse(text) {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const rule = lines.findIndex((l) => /^---\s*$/.test(l));
