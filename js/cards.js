@@ -69,6 +69,8 @@ const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/brandin
 // One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
 const GIF_SWITCH_AFTER = 1500;
 const GIF_UNLOAD_AFTER = 45000;
+const HOVER_SELECT_AFTER = 900;
+const PLAY_PREFERENCE = ['steam', 'itch', 'bbox'];
 
 function gifsOf(item) {
   return [item.gif ?? []].flat().filter(Boolean);
@@ -148,6 +150,22 @@ function launchOf(item) {
   if (links.itch)  list.push({ kind: 'itch',  url: links.itch,  label: 'itch.io',   icon: 'fa-brands fa-itch-io' });
   if (links.steam) list.push({ kind: 'steam', url: links.steam, label: 'Steam',     icon: 'fa-brands fa-steam' });
   return list;
+}
+
+// the same launch the right panel offers, as one play button over the card art
+function playOverlay(item) {
+  const launch = launchOf(item);
+  const pick = PLAY_PREFERENCE.map(kind => launch.find(l => l.kind === kind)).find(Boolean);
+  if (!pick) return null;
+  const a = el('a', 'work-play-over');
+  a.href = pick.url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.setAttribute('aria-label', `Play ${item.title} on ${pick.label}`);
+  a.title = pick.label;
+  a.innerHTML = '<i class="fa-solid fa-play"></i>';
+  a.addEventListener('click', e => e.stopPropagation());
+  return a;
 }
 
 function setSelected(card, item) {
@@ -266,10 +284,27 @@ const CARD_TYPES = {
         imgWrap.appendChild(gif.el);
       }
 
+      const play = playOverlay(item);
+      if (play) imgWrap.appendChild(play);
+
+      // resting on a card selects it, the same as a click
+      let dwell = 0;
       card.addEventListener('mouseenter', () => {
         window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ? { credits: item.credits, roles: item.roles ?? {} } : null }));
+        clearTimeout(dwell);
+        if (selected?.card === card) return;
+        card.classList.add('is-dwelling');
+        dwell = setTimeout(() => {
+          card.classList.remove('is-dwelling');
+          if (selected?.card === card) return;
+          setSelected(card, item);
+          card._hoverPicked = true;
+        }, HOVER_SELECT_AFTER);
       });
       card.addEventListener('mouseleave', () => {
+        clearTimeout(dwell);
+        card.classList.remove('is-dwelling');
+        card._hoverPicked = false;
         window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
       });
 
@@ -317,7 +352,13 @@ const CARD_TYPES = {
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-pressed', 'false');
-      card.addEventListener('click', () => toggleSelected(card, item));
+      card.addEventListener('click', () => {
+        // a click right after a long hover picked the card keeps it picked
+        if (card._hoverPicked) { card._hoverPicked = false; return; }
+        clearTimeout(dwell);
+        card.classList.remove('is-dwelling');
+        toggleSelected(card, item);
+      });
       card.addEventListener('keydown', e => {
         if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
         e.preventDefault();

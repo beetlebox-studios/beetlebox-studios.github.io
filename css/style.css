@@ -217,6 +217,61 @@ h1, h2, h3, h4, h5, h6, p, a {
 /* Fade in once src is populated (mouseenter sets it) */
 .work-gif.is-shown.is-loaded { opacity: 1; }
 
+/* The right panel's play button, repeated over the art so it is one short move away */
+.work-play-over {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: 3rem;
+  height: 3rem;
+  margin: -1.5rem 0 0 -1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  color: var(--page-bg);
+  background: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--page-bg) 70%, transparent), var(--shadow);
+  text-decoration: none;
+  opacity: 0;
+  scale: 0.8;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease), scale 0.2s var(--ease);
+}
+.work-play-over i { translate: 2px 0; }
+.work-card:hover .work-play-over,
+.work-card:focus-within .work-play-over,
+.work-card.is-selected .work-play-over {
+  opacity: 1;
+  scale: 1;
+  pointer-events: auto;
+}
+.work-card .work-play-over:hover { scale: 1.1; }
+.work-card .work-play-over:active { scale: 0.95; }
+
+/* a thin bar fills while the mouse rests on a card, then the card is selected */
+.work-img-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 100%;
+  height: 2px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  pointer-events: none;
+}
+.work-card.is-dwelling .work-img-wrap::after {
+  opacity: 1;
+  transform: scaleX(1);
+  transition: transform 0.9s linear;
+}
+
 .work-placeholder-bg {
   position: absolute;
   inset: 0;
@@ -1260,6 +1315,7 @@ body {
 
 /* stickers are decoration: clicking them does nothing */
 .team-game--sticker { pointer-events: none; }
+.team-game--out { pointer-events: none; }
 /* role chips select a role */
 .team-node:not(.team-node--launch) .team-chip { cursor: pointer; }
 .team-chip--selected { outline: 2px solid var(--primary); outline-offset: 1px; }
