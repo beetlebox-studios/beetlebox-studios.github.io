@@ -67,7 +67,6 @@ let selectedRoleName = null;
 const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
 // One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
-const GIF_SWITCH_AFTER = 1500;
 const GIF_UNLOAD_AFTER = 45000;
 const HOVER_SELECT_AFTER = 900;
 const PLAY_PREFERENCE = ['steam', 'itch', 'bbox'];
@@ -94,52 +93,60 @@ function makeGifPreview(sources) {
   el.addEventListener('load', () => { if (el.getAttribute('src')) el.classList.add('is-loaded'); });
   let order = shuffled(sources);
   let index = 0;
-  let hiddenAt = 0;
   let unloadTimer = null;
   let visible = false;
+  let played = false;
 
   const load = src => {
     el.classList.remove('is-loaded');
     el.src = src;
   };
+  const unloadLater = () => {
+    clearTimeout(unloadTimer);
+    unloadTimer = setTimeout(() => {
+      el.classList.remove('is-loaded');
+      el.removeAttribute('src');
+    }, GIF_UNLOAD_AFTER);
+  };
 
   return {
     el,
-    show() {
-      if (visible) return;
-      visible = true;
+    warm() {
       clearTimeout(unloadTimer);
-      el.classList.add('is-shown');
-      if (!el.getAttribute('src')) { load(order[index]); return; }
-      if (sources.length > 1 && performance.now() - hiddenAt > GIF_SWITCH_AFTER) {
+      if (visible) return;
+      if (played && sources.length > 1) {
+        played = false;
         index++;
         if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
         load(order[index]);
+      } else if (!el.getAttribute('src')) {
+        load(order[index]);
       }
+    },
+    cool() {
+      if (!visible) unloadLater();
+    },
+    show() {
+      if (visible) return;
+      this.warm();
+      visible = true;
+      played = true;
+      el.classList.add('is-shown');
     },
     hide() {
       if (!visible) return;
       visible = false;
-      hiddenAt = performance.now();
       el.classList.remove('is-shown');
-      clearTimeout(unloadTimer);
-      unloadTimer = setTimeout(() => {
-        el.classList.remove('is-loaded');
-        el.removeAttribute('src');
-        if (sources.length > 1) {
-          index++;
-          if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
-        }
-      }, GIF_UNLOAD_AFTER);
+      unloadLater();
     },
   };
 }
 
-// a selected game's gif keeps looping even when the mouse leaves; a deselected one hides unless hovered
+// only the selected game's gif plays; hovering a card loads it early so selecting shows it at once
 function syncGif(card) {
   const gif = card._gif;
   if (!gif) return;
-  if (card.classList.contains('is-selected') || card.matches(':hover')) gif.show();
+  if (card.classList.contains('is-selected')) gif.show();
   else gif.hide();
 }
 
@@ -152,12 +159,11 @@ function launchOf(item) {
   return list;
 }
 
-// the same launch the right panel offers, as one play button over the card art
-function playOverlay(item) {
+function playButton(item) {
   const launch = launchOf(item);
   const pick = PLAY_PREFERENCE.map(kind => launch.find(l => l.kind === kind)).find(Boolean);
   if (!pick) return null;
-  const a = el('a', 'work-play-over');
+  const a = el('a', 'work-play-go');
   a.href = pick.url;
   a.target = '_blank';
   a.rel = 'noopener';
@@ -278,30 +284,25 @@ const CARD_TYPES = {
       const gifs = gifsOf(item);
       if (gifs.length && !item.draft) {
         const gif = makeGifPreview(gifs);
-        card.addEventListener('mouseenter', () => gif.show());
-        card.addEventListener('mouseleave', () => syncGif(card));
+        card.addEventListener('mouseenter', () => gif.warm());
+        card.addEventListener('mouseleave', () => gif.cool());
         card._gif = gif;
         imgWrap.appendChild(gif.el);
       }
 
-      const play = playOverlay(item);
-      if (play) imgWrap.appendChild(play);
+      const play = playButton(item);
 
-      // resting on a card selects it, the same as a click
       let dwell = 0;
       card.addEventListener('mouseenter', () => {
         window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ? { credits: item.credits, roles: item.roles ?? {} } : null }));
         clearTimeout(dwell);
         if (selected?.card === card) return;
         dwell = setTimeout(() => {
-          if (selected?.card === card) return;
-          setSelected(card, item);
-          card._hoverPicked = true;
+          if (selected?.card !== card) setSelected(card, item);
         }, HOVER_SELECT_AFTER);
       });
       card.addEventListener('mouseleave', () => {
         clearTimeout(dwell);
-        card._hoverPicked = false;
         window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
       });
 
@@ -344,21 +345,24 @@ const CARD_TYPES = {
       if (item.links?.play) {
         info.appendChild(playLink(item, 'work-play'));
       }
-      // Clicking selects the game: its creators stay in the right panel along with a launch
-      // capsule, so their links stay reachable. Launching happens from the capsule.
+      if (play) {
+        info.classList.add('has-play');
+        info.appendChild(play);
+      }
+      // Clicking selects the game; once it is selected, clicking it again plays it
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-pressed', 'false');
-      card.addEventListener('click', () => {
-        // a click right after a long hover picked the card keeps it picked
-        if (card._hoverPicked) { card._hoverPicked = false; return; }
+      const activate = () => {
         clearTimeout(dwell);
-        toggleSelected(card, item);
-      });
+        if (play && selected?.card === card) play.click();
+        else toggleSelected(card, item);
+      };
+      card.addEventListener('click', activate);
       card.addEventListener('keydown', e => {
         if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
         e.preventDefault();
-        toggleSelected(card, item);
+        activate();
       });
 
       const linkDefs = [

@@ -51,8 +51,7 @@
 }
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 2; }
-/* the white beetle badge and logo flip to black on the light theme */
-:root[data-theme="light"] .team-badge,
+/* the white logo flips to black on the light theme */
 :root[data-theme="light"] .team-launch-logo { filter: invert(1); }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -217,40 +216,34 @@ h1, h2, h3, h4, h5, h6, p, a {
 /* Fade in once src is populated (mouseenter sets it) */
 .work-gif.is-shown.is-loaded { opacity: 1; }
 
-/* The right panel's play button, repeated over the art so it is one short move away */
-.work-play-over {
+.work-info { position: relative; }
+.work-info.has-play { padding-right: 2.4rem; }
+.work-play-go {
   position: absolute;
-  left: 50%;
+  right: 0.7rem;
   top: 50%;
-  z-index: 3;
-  width: 3rem;
-  height: 3rem;
-  margin: -1.5rem 0 0 -1.5rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: -0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   font-size: 1.05rem;
-  color: #fff;
-  background: none;
-  border: 2px solid #fff;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7));
+  color: var(--text);
   text-decoration: none;
   opacity: 0;
   scale: 0.8;
   visibility: hidden;
-  transition: opacity 0.2s var(--ease), scale 0.2s var(--ease), visibility 0s linear 0.2s;
+  transition: opacity 0.2s var(--ease), scale 0.2s var(--ease), color 0.15s var(--ease), visibility 0s linear 0.2s;
 }
-.work-play-over i { translate: 2px 0; }
-/* only there once the card is selected */
-.work-card.is-selected .work-play-over {
+.work-card.is-selected .work-play-go {
   opacity: 1;
   scale: 1;
   visibility: visible;
   transition-delay: 0s;
 }
-.work-card .work-play-over:hover { scale: 1.1; }
-.work-card .work-play-over:active { scale: 0.95; }
+.work-card .work-play-go:hover { color: var(--primary); scale: 1.15; }
+.work-card .work-play-go:active { scale: 0.95; }
 
 .work-placeholder-bg {
   position: absolute;
@@ -1083,7 +1076,6 @@ body {
   border-color: var(--pill);
 }
 
-/* Links are moons on a tight orbit around the circle; team.js turns them */
 .team-moon {
   --moon: clamp(14px, calc(var(--node-size) * 0.3), 22px);
   position: absolute;
@@ -1103,12 +1095,18 @@ body {
   border: 1px solid color-mix(in oklch, var(--primary) 40%, transparent);
   box-shadow: 0 2px 6px rgba(0,0,0,0.5);
   text-decoration: none;
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease),
+              opacity 0.3s var(--ease), visibility 0s linear 0s;
 }
 .team-moon:hover {
   color: var(--page-bg);
   background: var(--primary);
   border-color: var(--primary);
+}
+.team-node--moonless .team-moon {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease), visibility 0s linear 0.3s;
 }
 .team-node:hover .team-node-label { z-index: 5; }
 .team-node:hover .team-node-circle { z-index: 6; }
@@ -1122,13 +1120,6 @@ body {
 }
 .team-node--focus .team-node-name { color: var(--primary); }
 .team-node-name { transition: color 0.3s var(--ease); }
-.team-badge {
-  width: 14px;
-  height: 14px;
-  margin-right: 0.3rem;
-  vertical-align: -2px;
-  image-rendering: pixelated;
-}
 
 /* Launch capsule — appears beside a selected game's creators */
 .team-node--launch {

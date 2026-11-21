@@ -32,9 +32,9 @@
   const MOON_GAP      = 3;
   const MOON_MIN      = 14;
   const MOON_MAX      = 22;
-  const MOON_SPEED    = 0.25; // radians a second
-
-  const BEETLE_BADGE = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
+  const MOON_ARC      = 3;
+  const MOON_HIDE_BELOW = 40;
+  const LABEL_TOP     = 6.4;
 
   const LINK_DEFS = [
     { key: 'personal',   icon: 'fa-solid fa-globe',       label: 'Personal site' },
@@ -139,20 +139,9 @@
     node.appendChild(circle);
 
     const label = el('div', 'team-node-label');
-    const name = text('p', 'team-node-name', '');
-    if (item.founder) {
-      const badge = makeImg(BEETLE_BADGE, 'Founding member', 'team-badge');
-      badge.width = 14;
-      badge.height = 14;
-      badge.title = 'Founding member';
-      badge.loading = 'eager';
-      name.appendChild(badge);
-    }
-    name.appendChild(document.createTextNode(item.name));
-    label.appendChild(name);
+    label.appendChild(text('p', 'team-node-name', item.name));
     label.appendChild(el('div', 'team-node-roles'));
 
-    // each link is a small moon on a tight orbit around the circle
     LINK_DEFS.filter(d => item.links?.[d.key]).forEach(({ key, icon, label: aria }) => {
       const a = el('a', 'team-moon');
       a.href   = item.links[key];
@@ -171,13 +160,31 @@
     return Math.max(MOON_MIN, Math.min(MOON_MAX, sz * 0.3));
   }
 
-  function stepMoons(d, dt, sz) {
+  const hasMoons = (d, sz) => d.moons.length > 0 && sz >= MOON_HIDE_BELOW;
+
+  function measure(d) {
+    const sz = d.sz ?? size;
+    const m = moonSize(sz);
+    d.lh = d.label.offsetHeight;
+    d.w = Math.max(d.label.offsetWidth, hasMoons(d, sz) ? d.moons.length * (m + MOON_GAP) : 0);
+    d.h = d.lh + (hasMoons(d, sz) ? m + MOON_GAP * 2 + MOON_ARC : 0);
+  }
+
+  function stepMoons(d, t, sz) {
     if (!d.moons.length) return;
-    if (!d.hover && !reduceMotion.matches) d.spin += MOON_SPEED * dt;
-    const r = sz / 2 + moonSize(sz) / 2 + MOON_GAP;
-    d.moons.forEach((m, i) => {
-      const a = d.spin + (i / d.moons.length) * Math.PI * 2;
-      m.style.translate = `${(Math.cos(a) * r).toFixed(1)}px ${(Math.sin(a) * r).toFixed(1)}px`;
+    const show = hasMoons(d, sz);
+    d.node.classList.toggle('team-node--moonless', !show);
+    if (!show) return;
+    const m = moonSize(sz);
+    const n = d.moons.length;
+    const top = sz / 2 + LABEL_TOP + (d.lh ?? 0) + MOON_GAP + m / 2;
+    const bob = reduceMotion.matches ? 0 : 1.5;
+    d.moons.forEach((moon, i) => {
+      const k = i - (n - 1) / 2;
+      const u = n > 1 ? k / ((n - 1) / 2) : 0;
+      const x = k * (m + MOON_GAP) + Math.sin(t * 0.0011 + i * 2.1) * bob;
+      const y = top + u * u * MOON_ARC + Math.cos(t * 0.0013 + i * 1.7) * bob;
+      moon.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
     });
   }
 
@@ -342,10 +349,8 @@
     d.node.classList.remove('team-node--small');
   }
 
-  // The universe: every sticker, planet and cover is a permanent object, handled like the people circles.
-  // Each view works out where everything should land (a cramming pass that spreads items apart). Objects
-  // that stay in view ease to their new spot, ones that join fade in where they land, and ones that leave
-  // fade out where they are.
+  // The universe: every sticker, planet and cover is a permanent object. Each view works out where things
+  // land; objects that stay ease there, ones that join fade in in place and ones that leave fade out in place.
 
   // width / height of an image, so stickers and covers keep their shape; circles are 1
   function preload(src) {
@@ -528,7 +533,7 @@
       d.ta = shown.includes(d) ? 1 : 0;
       d.node.classList.toggle('team-node--focus', !!focus && d.ta === 1 && view.type !== 'role');
     });
-    shown.forEach(d => { d.w = d.label.offsetWidth; d.h = d.label.offsetHeight; });
+    shown.forEach(measure);
     const cellW = Math.max(...shown.map(d => d.w));
     const labelH = Math.max(...shown.map(d => d.h));
     const sizes = [];
@@ -572,8 +577,7 @@
     if (center) {
       resetSolarLook(center);
       center.ta = 1;
-      center.w = center.label.offsetWidth;
-      center.h = center.label.offsetHeight;
+      measure(center);
       items.push(devItem(center, cx, cy));
     }
     const n = bodyList.length;
@@ -617,8 +621,7 @@
       d.sz = small;
       d.node.classList.add('team-node--small');
       d.ta = 1;
-      d.w = d.label.offsetWidth;
-      d.h = d.label.offsetHeight;
+      measure(d);
       items.push(devItem(d, cx + Math.cos(t) * rx2, cy + Math.sin(t) * ry2));
     });
     return items;
@@ -635,7 +638,6 @@
     // which permanent objects take part in this view
     let active = [];
     if (view.type === 'game') {
-      // a game with stickers shows just those, the cover is only a stand-in for games without any
       const mine = bodies.filter(b => b.game.title === view.title);
       const stickers = mine.filter(b => b.kind === 'sticker');
       active = stickers.length ? stickers : mine.filter(b => b.kind === 'cover');
@@ -684,16 +686,12 @@
       if (d.tx === undefined) { d.tx = w / 2; d.ty = h / 2; }
       const sz = d.sz ?? size;
       if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; d.cs = sz; }
-      // anyone who was out of sight appears where they will sit, at their new size
       if (d.ta === 1 && d.a < 0.05) { d.x = d.tx; d.y = d.ty; d.vx = 0; d.vy = 0; d.cs = sz; }
     });
     updateAnchors();
     snap = false;
   }
 
-  // The spring runs around the panel centre (radius and angle, scaled to the panel's shape), so things
-  // travelling between views swing around the ring instead of cutting across the middle. vx and vy hold
-  // the radial and angular speeds.
   function orbit(o, dt) {
     const { cx, cy, hw, hh } = panel;
     const u = (o.x - cx) / hw;
@@ -758,7 +756,7 @@
       d.cs = Math.abs(target - (d.cs ?? target)) < 0.2 ? target : d.cs + (target - d.cs) * fade;
       const sz = d.cs;
       d.node.style.setProperty('--node-size', `${sz.toFixed(1)}px`);
-      stepMoons(d, dt, sz);
+      stepMoons(d, t, sz);
       d.node.style.left = `${d.x - sz / 2}px`;
       d.node.style.top = `${d.y - sz / 2}px`;
       d.node.style.translate = reduceMotion.matches ? '' : `${(Math.sin(t * d.f1 + d.p1) * BOB).toFixed(2)}px ${(Math.cos(t * d.f2 + d.p2) * BOB).toFixed(2)}px`;
@@ -848,7 +846,6 @@
     projectRoles = {};
     launchActive = new Set();
     if (selectedPerson) {
-      // collaborators shrink and travel out to their orbit, everyone else fades where they stand
       view = { type: 'person', name: selectedPerson };
     } else {
       view = { type: 'all' };
@@ -916,10 +913,8 @@
       node.style.setProperty('--delay', `${i * 60}ms`);
       container.appendChild(node);
       const d = { item, node, label: node.querySelector('.team-node-label'), roles: sortRoles(item.roles, item.name),
-        moons: [...node.querySelectorAll('.team-moon')], spin: i * 1.1, hover: false, x: 0, y: 0, a: 0, ta: 1,
+        moons: [...node.querySelectorAll('.team-moon')], x: 0, y: 0, a: 0, ta: 1,
         p1: i * 2.3 + 0.7, p2: i * 1.7 + 2.1, f1: 0.0016 + (i % 5) * 0.0002, f2: 0.0013 + (i % 7) * 0.00017 };
-      node.addEventListener('mouseenter', () => { d.hover = true; });
-      node.addEventListener('mouseleave', () => { d.hover = false; });
       setChips(d, d.roles);
       return d;
     });
