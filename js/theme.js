@@ -50,7 +50,9 @@
   }
 
   const system = () => (query.matches ? 'light' : 'dark');
-  let override = saved();
+  const fromUrl = urlSetting('theme');
+  let override = fromUrl === 'light' || fromUrl === 'dark' ? fromUrl : saved();
+  setUrlSetting('theme', override);
 
   query.addEventListener('change', () => { if (!override) apply(system()); });
 
@@ -58,6 +60,7 @@
     e.stopPropagation();
     override = root.dataset.theme === 'light' ? 'dark' : 'light';
     store(override);
+    setUrlSetting('theme', override);
     reveal(() => apply(override));
   });
 
@@ -66,6 +69,7 @@
     reset: () => {
       override = null;
       store(null);
+      setUrlSetting('theme', null);
       reveal(() => apply(system()));
     },
   });

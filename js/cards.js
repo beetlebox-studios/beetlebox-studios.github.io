@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -67,16 +67,78 @@ let selectedRoleName = null;
 const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
 // One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
-// a selected game's gif keeps looping even when the mouse leaves; a deselected one stops unless hovered
+const GIF_SWITCH_AFTER = 1500;
+const GIF_UNLOAD_AFTER = 45000;
+
+function gifsOf(item) {
+  return [item.gif ?? []].flat().filter(Boolean);
+}
+
+function shuffled(list, avoidFirst) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  if (out.length > 1 && out[0] === avoidFirst) out.push(out.shift());
+  return out;
+}
+
+function makeGifPreview(sources) {
+  const el = document.createElement('img');
+  el.className = 'work-gif';
+  el.alt = '';
+  el.setAttribute('aria-hidden', 'true');
+  el.addEventListener('load', () => { if (el.getAttribute('src')) el.classList.add('is-loaded'); });
+  let order = shuffled(sources);
+  let index = 0;
+  let hiddenAt = 0;
+  let unloadTimer = null;
+  let visible = false;
+
+  const load = src => {
+    el.classList.remove('is-loaded');
+    el.src = src;
+  };
+
+  return {
+    el,
+    show() {
+      if (visible) return;
+      visible = true;
+      clearTimeout(unloadTimer);
+      el.classList.add('is-shown');
+      if (!el.getAttribute('src')) { load(order[index]); return; }
+      if (sources.length > 1 && performance.now() - hiddenAt > GIF_SWITCH_AFTER) {
+        index++;
+        if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
+        load(order[index]);
+      }
+    },
+    hide() {
+      if (!visible) return;
+      visible = false;
+      hiddenAt = performance.now();
+      el.classList.remove('is-shown');
+      clearTimeout(unloadTimer);
+      unloadTimer = setTimeout(() => {
+        el.classList.remove('is-loaded');
+        el.removeAttribute('src');
+        if (sources.length > 1) {
+          index++;
+          if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
+        }
+      }, GIF_UNLOAD_AFTER);
+    },
+  };
+}
+
+// a selected game's gif keeps looping even when the mouse leaves; a deselected one hides unless hovered
 function syncGif(card) {
   const gif = card._gif;
   if (!gif) return;
-  if (card.classList.contains('is-selected') || card.matches(':hover')) {
-    gif.el.src = gif.src;
-  } else {
-    gif.el.classList.remove('is-loaded');
-    gif.el.removeAttribute('src');
-  }
+  if (card.classList.contains('is-selected') || card.matches(':hover')) gif.show();
+  else gif.hide();
 }
 
 function launchOf(item) {
@@ -195,23 +257,13 @@ const CARD_TYPES = {
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
 
-      // GIF preview — sits above thumbnail, hidden until hover.
-      // src is left empty and only assigned on mouseenter so the GIF
-      // starts from frame 1 each time (browsers restart a GIF when src is set).
-      // On mouseleave src is cleared, stopping playback and freeing memory.
-      if (item.gif && !item.draft) {
-        const gifEl = el('img', 'work-gif');
-        gifEl.alt = '';
-        gifEl.setAttribute('aria-hidden', 'true');
-        gifEl.addEventListener('load', () => { if (gifEl.getAttribute('src')) gifEl.classList.add('is-loaded'); });
-        card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
-        card.addEventListener('mouseleave', () => {
-          if (card.classList.contains('is-selected')) return;
-          gifEl.classList.remove('is-loaded');
-          gifEl.removeAttribute('src');
-        });
-        card._gif = { el: gifEl, src: item.gif };
-        imgWrap.appendChild(gifEl);
+      const gifs = gifsOf(item);
+      if (gifs.length && !item.draft) {
+        const gif = makeGifPreview(gifs);
+        card.addEventListener('mouseenter', () => gif.show());
+        card.addEventListener('mouseleave', () => syncGif(card));
+        card._gif = gif;
+        imgWrap.appendChild(gif.el);
       }
 
       card.addEventListener('mouseenter', () => {

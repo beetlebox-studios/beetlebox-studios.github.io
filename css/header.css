@@ -411,6 +411,7 @@ mark.search-hl.search-hl--current {
   height: 28px;
   font-size: 0.75rem;
 }
+.accent-reset-btn[hidden] { display: none; }
 
 .admin-only { display: none !important; }
 html.admin .admin-only { display: revert !important; }

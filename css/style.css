@@ -215,7 +215,7 @@ h1, h2, h3, h4, h5, h6, p, a {
   z-index: 1;
 }
 /* Fade in once src is populated (mouseenter sets it) */
-.work-gif.is-loaded { opacity: 1; }
+.work-gif.is-shown.is-loaded { opacity: 1; }
 
 .work-placeholder-bg {
   position: absolute;
@@ -873,6 +873,15 @@ h1, h2, h3, h4, h5, h6, p, a {
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+.footer-version,
+.footer-github {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: color 0.15s var(--ease);
+}
+.footer-version { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+.footer-version:hover,
+.footer-github:hover { color: var(--primary); }
 
 
 /* Navbar, games panel + team panel side by side, slim footer —
@@ -919,7 +928,7 @@ body {
   border-top: none;
   padding: 0.6rem 1.5rem 0.75rem;
 }
-.footer-inner { justify-content: center; }
+.footer-inner { justify-content: center; gap: 0.75rem; }
 
 /* Compact game cards: image fills the cell, one-line info below */
 .work-grid { align-content: start; height: 100%; overflow-y: auto; gap: 0.75rem; }

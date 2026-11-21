@@ -115,13 +115,18 @@ function applyVal(val) {
   const orb = document.getElementById('accent-orb');
   if (orb) orb.style.background = hex;
   updateFavicon(hex);
+  const isDefault = Math.round(val * 1000) === DEFAULT_VAL * 1000;
+  document.getElementById('accent-reset-btn')?.toggleAttribute('hidden', isDefault);
+  setUrlSetting('accent', isDefault ? null : Math.round(val * 1000));
   window.dispatchEvent(new Event('settings:changed'));
 }
 
 window.addEventListener('theme:changed', () => applyVal(currentVal));
 
 (function initAccent() {
-  applyVal(DEFAULT_VAL);
+  const fromUrl = Number(urlSetting('accent'));
+  const startVal = urlSetting('accent') !== null && fromUrl >= 0 && fromUrl <= 1000 ? fromUrl / 1000 : DEFAULT_VAL;
+  applyVal(startVal);
 
   const btn       = document.getElementById('accent-btn');
   const slider    = document.getElementById('hue-slider');
@@ -131,11 +136,11 @@ window.addEventListener('theme:changed', () => applyVal(currentVal));
   slider.min   = 0;
   slider.max   = 1000;
   slider.step  = 1;
-  slider.value = DEFAULT_VAL * 1000;
+  slider.value = startVal * 1000;
   slider.addEventListener('input', () => applyVal(Number(slider.value) / 1000));
 
   registerSetting({
-    isDefault: () => currentVal === DEFAULT_VAL,
+    isDefault: () => Math.round(currentVal * 1000) === DEFAULT_VAL * 1000,
     reset: () => {
       slider.value = DEFAULT_VAL * 1000;
       applyVal(DEFAULT_VAL);
