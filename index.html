@@ -8,8 +8,9 @@
   <script>
     // Theme before first paint: saved choice, else the system preference
     (function () {
-      var saved = null;
-      try { saved = localStorage.getItem('theme'); } catch (e) {}
+      var saved = new URLSearchParams(location.search).get('theme');
+      if (saved !== 'light' && saved !== 'dark') saved = null;
+      try { saved = saved || localStorage.getItem('theme'); } catch (e) {}
       var light = saved ? saved === 'light' : matchMedia('(prefers-color-scheme: light)').matches;
       document.documentElement.dataset.theme = light ? 'light' : 'dark';
     })();
@@ -75,9 +76,19 @@
 <footer id="site-footer">
   <div class="footer-inner">
     <p class="footer-copy"></p>
+    <a class="footer-version" id="footer-version" href="https://github.com/beetlebox-studios/beetlebox-studios.github.io/releases" target="_blank" rel="noopener" hidden></a>
+    <a class="footer-github" href="https://github.com/beetlebox-studios" target="_blank" rel="noopener" aria-label="BeetleBox Studios on GitHub"><i class="fa-brands fa-github"></i></a>
   <script>
-    document.querySelector('.footer-copy').textContent = 
+    document.querySelector('.footer-copy').textContent =
       `© BeetleBox Studios ${new Date().getFullYear()} · Philadelphia, PA`;
+    fetch('package.json')
+      .then(r => r.json())
+      .then(({ version }) => {
+        const link = document.getElementById('footer-version');
+        link.textContent = 'v' + version;
+        link.hidden = false;
+      })
+      .catch(() => {});
   </script>
   </div>
 </footer>

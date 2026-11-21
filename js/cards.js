@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -67,16 +67,80 @@ let selectedRoleName = null;
 const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
 // One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
-// a selected game's gif keeps looping even when the mouse leaves; a deselected one stops unless hovered
+const GIF_SWITCH_AFTER = 1500;
+const GIF_UNLOAD_AFTER = 45000;
+const HOVER_SELECT_AFTER = 900;
+const PLAY_PREFERENCE = ['steam', 'itch', 'bbox'];
+
+function gifsOf(item) {
+  return [item.gif ?? []].flat().filter(Boolean);
+}
+
+function shuffled(list, avoidFirst) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  if (out.length > 1 && out[0] === avoidFirst) out.push(out.shift());
+  return out;
+}
+
+function makeGifPreview(sources) {
+  const el = document.createElement('img');
+  el.className = 'work-gif';
+  el.alt = '';
+  el.setAttribute('aria-hidden', 'true');
+  el.addEventListener('load', () => { if (el.getAttribute('src')) el.classList.add('is-loaded'); });
+  let order = shuffled(sources);
+  let index = 0;
+  let hiddenAt = 0;
+  let unloadTimer = null;
+  let visible = false;
+
+  const load = src => {
+    el.classList.remove('is-loaded');
+    el.src = src;
+  };
+
+  return {
+    el,
+    show() {
+      if (visible) return;
+      visible = true;
+      clearTimeout(unloadTimer);
+      el.classList.add('is-shown');
+      if (!el.getAttribute('src')) { load(order[index]); return; }
+      if (sources.length > 1 && performance.now() - hiddenAt > GIF_SWITCH_AFTER) {
+        index++;
+        if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
+        load(order[index]);
+      }
+    },
+    hide() {
+      if (!visible) return;
+      visible = false;
+      hiddenAt = performance.now();
+      el.classList.remove('is-shown');
+      clearTimeout(unloadTimer);
+      unloadTimer = setTimeout(() => {
+        el.classList.remove('is-loaded');
+        el.removeAttribute('src');
+        if (sources.length > 1) {
+          index++;
+          if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
+        }
+      }, GIF_UNLOAD_AFTER);
+    },
+  };
+}
+
+// a selected game's gif keeps looping even when the mouse leaves; a deselected one hides unless hovered
 function syncGif(card) {
   const gif = card._gif;
   if (!gif) return;
-  if (card.classList.contains('is-selected') || card.matches(':hover')) {
-    gif.el.src = gif.src;
-  } else {
-    gif.el.classList.remove('is-loaded');
-    gif.el.removeAttribute('src');
-  }
+  if (card.classList.contains('is-selected') || card.matches(':hover')) gif.show();
+  else gif.hide();
 }
 
 function launchOf(item) {
@@ -86,6 +150,22 @@ function launchOf(item) {
   if (links.itch)  list.push({ kind: 'itch',  url: links.itch,  label: 'itch.io',   icon: 'fa-brands fa-itch-io' });
   if (links.steam) list.push({ kind: 'steam', url: links.steam, label: 'Steam',     icon: 'fa-brands fa-steam' });
   return list;
+}
+
+// the same launch the right panel offers, as one play button over the card art
+function playOverlay(item) {
+  const launch = launchOf(item);
+  const pick = PLAY_PREFERENCE.map(kind => launch.find(l => l.kind === kind)).find(Boolean);
+  if (!pick) return null;
+  const a = el('a', 'work-play-over');
+  a.href = pick.url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.setAttribute('aria-label', `Play ${item.title} on ${pick.label}`);
+  a.title = pick.label;
+  a.innerHTML = '<i class="fa-solid fa-play"></i>';
+  a.addEventListener('click', e => e.stopPropagation());
+  return a;
 }
 
 function setSelected(card, item) {
@@ -195,29 +275,36 @@ const CARD_TYPES = {
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
 
-      // GIF preview — sits above thumbnail, hidden until hover.
-      // src is left empty and only assigned on mouseenter so the GIF
-      // starts from frame 1 each time (browsers restart a GIF when src is set).
-      // On mouseleave src is cleared, stopping playback and freeing memory.
-      if (item.gif && !item.draft) {
-        const gifEl = el('img', 'work-gif');
-        gifEl.alt = '';
-        gifEl.setAttribute('aria-hidden', 'true');
-        gifEl.addEventListener('load', () => { if (gifEl.getAttribute('src')) gifEl.classList.add('is-loaded'); });
-        card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
-        card.addEventListener('mouseleave', () => {
-          if (card.classList.contains('is-selected')) return;
-          gifEl.classList.remove('is-loaded');
-          gifEl.removeAttribute('src');
-        });
-        card._gif = { el: gifEl, src: item.gif };
-        imgWrap.appendChild(gifEl);
+      const gifs = gifsOf(item);
+      if (gifs.length && !item.draft) {
+        const gif = makeGifPreview(gifs);
+        card.addEventListener('mouseenter', () => gif.show());
+        card.addEventListener('mouseleave', () => syncGif(card));
+        card._gif = gif;
+        imgWrap.appendChild(gif.el);
       }
 
+      const play = playOverlay(item);
+      if (play) imgWrap.appendChild(play);
+
+      // resting on a card selects it, the same as a click
+      let dwell = 0;
       card.addEventListener('mouseenter', () => {
         window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ? { credits: item.credits, roles: item.roles ?? {} } : null }));
+        clearTimeout(dwell);
+        if (selected?.card === card) return;
+        card.classList.add('is-dwelling');
+        dwell = setTimeout(() => {
+          card.classList.remove('is-dwelling');
+          if (selected?.card === card) return;
+          setSelected(card, item);
+          card._hoverPicked = true;
+        }, HOVER_SELECT_AFTER);
       });
       card.addEventListener('mouseleave', () => {
+        clearTimeout(dwell);
+        card.classList.remove('is-dwelling');
+        card._hoverPicked = false;
         window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
       });
 
@@ -265,7 +352,13 @@ const CARD_TYPES = {
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-pressed', 'false');
-      card.addEventListener('click', () => toggleSelected(card, item));
+      card.addEventListener('click', () => {
+        // a click right after a long hover picked the card keeps it picked
+        if (card._hoverPicked) { card._hoverPicked = false; return; }
+        clearTimeout(dwell);
+        card.classList.remove('is-dwelling');
+        toggleSelected(card, item);
+      });
       card.addEventListener('keydown', e => {
         if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
         e.preventDefault();

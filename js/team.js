@@ -58,13 +58,13 @@
   let selectedPerson = null;
   let selectedRole = null;
   let view = { type: 'all' };
-  let solarTimer = 0;
   let gamesData = [];
   let bodies = [];
   const aspects = new Map();
   let projectRoles = {};
   let roleOrder = [];
   let size = 72;
+  let panel = { cx: 0, cy: 0, hw: 1, hh: 1 };
   let snap = true;
   let last = 0;
   let release = 0;
@@ -324,15 +324,13 @@
   function resetSolarLook(d) {
     if (d.sz === undefined) return;
     d.sz = undefined;
-    d.solarPlaced = false;
-    d.node.style.removeProperty('--node-size');
     d.node.classList.remove('team-node--small');
   }
 
-  // ── The universe: every sticker, planet and cover is a permanent object. Each view works out where
-  // everything should land (a cramming pass that spreads items apart), and then each object eases to its
-  // spot with the same spring the people circles use. Objects that are not in the current view park
-  // themselves beyond the panel edge, which clips them. ──────────────────────────────────────────────
+  // The universe: every sticker, planet and cover is a permanent object, handled like the people circles.
+  // Each view works out where everything should land (a cramming pass that spreads items apart). Objects
+  // that stay in view ease to their new spot, ones that join fade in where they land, and ones that leave
+  // fade out where they are.
 
   // width / height of an image, so stickers and covers keep their shape; circles are 1
   function preload(src) {
@@ -377,7 +375,7 @@
     container.appendChild(node);
     preload(src);
     return {
-      kind, game, src, node, i, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, w: 0, h: 0, active: false,
+      kind, game, src, node, i, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, w: 0, h: 0, a: 0, active: false,
       p1: i * 1.9 + 0.5, p2: i * 2.7 + 1.3, f1: 0.0017 + (i % 5) * 0.0002, f2: 0.0014 + (i % 7) * 0.00017,
     };
   }
@@ -602,9 +600,8 @@
     }
     placed.forEach(({ d, t }) => {
       d.sz = small;
-      d.node.style.setProperty('--node-size', `${small}px`);
       d.node.classList.add('team-node--small');
-      d.ta = view.shown ? 1 : 0;
+      d.ta = 1;
       d.w = d.label.offsetWidth;
       d.h = d.label.offsetHeight - d.links;
       items.push(devItem(d, cx + Math.cos(t) * rx2, cy + Math.sin(t) * ry2));
@@ -612,23 +609,22 @@
     return items;
   }
 
-  function parked(b, w, h) {
-    const a = b.i * 2.399;
-    const r = Math.max(w, h) * 0.75 + 120;
-    return { x: w / 2 + Math.cos(a) * r, y: h / 2 + Math.sin(a) * r };
-  }
-
   function arrange() {
     const w = container.clientWidth;
     const h = container.clientHeight;
     if (!w || !h || !devs.length) return;
+    panel = { cx: w / 2, cy: h / 2, hw: w / 2, hh: h / 2 };
     const people = devs.filter(d => !d.launch);
     const base = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
 
     // which permanent objects take part in this view
     let active = [];
-    if (view.type === 'game') active = bodies.filter(b => b.game.title === view.title && (b.kind === 'cover' || b.kind === 'sticker'));
-    else if (view.type === 'role') active = bodies.filter(b => b.kind === 'sticker');
+    if (view.type === 'game') {
+      // a game with stickers shows just those, the cover is only a stand-in for games without any
+      const mine = bodies.filter(b => b.game.title === view.title);
+      const stickers = mine.filter(b => b.kind === 'sticker');
+      active = stickers.length ? stickers : mine.filter(b => b.kind === 'cover');
+    } else if (view.type === 'role') active = bodies.filter(b => b.kind === 'sticker');
     else if (view.type === 'person') {
       active = bodies.filter(b => b.kind !== 'cover' && gameHas(b.game, view.name));
     }
@@ -660,40 +656,63 @@
     bodies.forEach(b => {
       const it = items.find(x => x.ref === b);
       b.active = !!it;
-      if (it) {
-        b.tx = it.x;
-        b.ty = it.y;
-        b.node.style.width = `${b.w}px`;
-        b.node.style.height = `${b.h}px`;
-      } else {
-        const p = parked(b, w, h);
-        b.tx = p.x;
-        b.ty = p.y;
-      }
-      if (!b.placed) { b.placed = true; const p = parked(b, w, h); b.x = p.x; b.y = p.y; }
+      if (!it) return;
+      b.tx = it.x;
+      b.ty = it.y;
+      b.node.style.width = `${b.w}px`;
+      b.node.style.height = `${b.h}px`;
+      if (b.a < 0.05) { b.x = b.tx; b.y = b.ty; b.vx = 0; b.vy = 0; }
     });
     devs.forEach(d => {
       const it = items.find(x => x.ref === d);
       if (it) { d.tx = it.x; d.ty = it.y; }
       if (d.tx === undefined) { d.tx = w / 2; d.ty = h / 2; }
-      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; }
-      // collaborators appear where they will sit
-      if (d.sz !== undefined && !d.solarPlaced) { d.solarPlaced = true; d.x = d.tx; d.y = d.ty; d.vx = 0; d.vy = 0; }
+      const sz = d.sz ?? size;
+      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; d.cs = sz; }
+      // anyone who was out of sight appears where they will sit, at their new size
+      if (d.ta === 1 && d.a < 0.05) { d.x = d.tx; d.y = d.ty; d.vx = 0; d.vy = 0; d.cs = sz; }
     });
     updateAnchors();
     snap = false;
   }
 
-  function stepBodies(t, dt) {
+  // The spring runs around the panel centre (radius and angle, scaled to the panel's shape), so things
+  // travelling between views swing around the ring instead of cutting across the middle. vx and vy hold
+  // the radial and angular speeds.
+  function orbit(o, dt) {
+    const { cx, cy, hw, hh } = panel;
+    const u = (o.x - cx) / hw;
+    const v = (o.y - cy) / hh;
+    const tu = (o.tx - cx) / hw;
+    const tv = (o.ty - cy) / hh;
+    let r = Math.hypot(u, v);
+    let th = Math.atan2(v, u);
+    const tr = Math.hypot(tu, tv);
+    const tth = Math.atan2(tv, tu);
+    let dth = tth - th;
+    dth -= Math.round(dth / (Math.PI * 2)) * Math.PI * 2;
+    if (r < 0.04 || tr < 0.04) { dth = 0; o.vy = 0; }
+    o.vx = (o.vx || 0) + (SPRING * (tr - r) - DAMP * (o.vx || 0)) * dt;
+    o.vy = (o.vy || 0) + (SPRING * dth - DAMP * (o.vy || 0)) * dt;
+    r = Math.max(0, r + o.vx * dt);
+    th = r < 0.04 && tr >= 0.04 ? tth : th + o.vy * dt;
+    o.x = cx + Math.cos(th) * r * hw;
+    o.y = cy + Math.sin(th) * r * hh;
+  }
+
+  function stepBodies(t, dt, fade) {
     const amp = reduceMotion.matches ? 0 : BOB;
     bodies.forEach(b => {
-      b.vx += (SPRING * (b.tx - b.x) - DAMP * b.vx) * dt;
-      b.vy += (SPRING * (b.ty - b.y) - DAMP * b.vy) * dt;
-      b.x += b.vx * dt;
-      b.y += b.vy * dt;
+      orbit(b, dt);
+      b.a +=((b.active ? 1 : 0) - b.a) * fade;
       b.node.style.left = `${b.x - b.w / 2}px`;
       b.node.style.top = `${b.y - b.h / 2}px`;
-      b.node.style.translate = b.active ? `${(Math.sin(t * b.f1 + b.p1) * amp).toFixed(2)}px ${(Math.cos(t * b.f2 + b.p2) * amp).toFixed(2)}px` : '';
+      b.node.style.translate = `${(Math.sin(t * b.f1 + b.p1) * amp).toFixed(2)}px ${(Math.cos(t * b.f2 + b.p2) * amp).toFixed(2)}px`;
+      const settled = b.active && b.a > 0.995;
+      b.node.style.opacity = settled ? '' : b.a.toFixed(3);
+      b.node.style.scale = settled ? '' : (0.7 + 0.3 * b.a).toFixed(3);
+      b.node.style.visibility = !b.active && b.a < 0.01 ? 'hidden' : '';
+      b.node.classList.toggle('team-game--out', !b.active);
     });
   }
 
@@ -715,15 +734,15 @@
     last = t;
     const drift = reduceMotion.matches ? 0 : DRIFT;
     const fade = 1 - Math.exp(-FADE_RATE * dt);
-    stepBodies(t, dt);
+    stepBodies(t, dt, fade);
     devs.forEach(d => {
-      d.vx = (d.vx || 0) + (SPRING * (d.tx - d.x) - DAMP * (d.vx || 0)) * dt;
-      d.vy = (d.vy || 0) + (SPRING * (d.ty - d.y) - DAMP * (d.vy || 0)) * dt;
-      d.x += d.vx * dt;
-      d.y += d.vy * dt;
+      orbit(d, dt);
       d.a += (d.ta - d.a) * fade;
       d.lf = (d.lf ?? 1) + (1 - (d.lf ?? 1)) * fade;
-      const sz = d.sz ?? size;
+      const target = d.sz ?? size;
+      d.cs = Math.abs(target - (d.cs ?? target)) < 0.2 ? target : d.cs + (target - d.cs) * fade;
+      const sz = d.cs;
+      d.node.style.setProperty('--node-size', `${sz.toFixed(1)}px`);
       d.node.style.left = `${d.x - sz / 2}px`;
       d.node.style.top = `${d.y - sz / 2}px`;
       d.node.style.translate = reduceMotion.matches ? '' : `${(Math.sin(t * d.f1 + d.p1) * BOB).toFixed(2)}px ${(Math.cos(t * d.f2 + d.p2) * BOB).toFixed(2)}px`;
@@ -781,7 +800,6 @@
 
   window.addEventListener('team:select', e => {
     clearTimeout(release);
-    clearTimeout(solarTimer);
     const pick = e.detail;
     selected = !!pick;
     selectedPerson = null;
@@ -807,7 +825,6 @@
   // Clicking a creator selects them: they move to the middle with their games around them
   function selectPerson(name) {
     clearTimeout(release);
-    clearTimeout(solarTimer);
     selectedPerson = selectedPerson === name ? null : name;
     selected = false;
     selectedRole = null;
@@ -815,9 +832,8 @@
     projectRoles = {};
     launchActive = new Set();
     if (selectedPerson) {
-      view = { type: 'person', name: selectedPerson, shown: false };
-      // everyone else hides first, then the collaborators come back smaller around the games
-      solarTimer = setTimeout(() => { if (view.type === 'person') { view.shown = true; arrange(); } }, 520);
+      // collaborators shrink and travel out to their orbit, everyone else fades where they stand
+      view = { type: 'person', name: selectedPerson };
     } else {
       view = { type: 'all' };
     }
@@ -830,7 +846,6 @@
   // Clicking a role chip filters the explorer to the people with that role; the stickers stay
   function selectRole(role) {
     clearTimeout(release);
-    clearTimeout(solarTimer);
     selectedRole = selectedRole === role ? null : role;
     selectedPerson = null;
     selected = false;

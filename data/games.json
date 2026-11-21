@@ -38,7 +38,8 @@
     "links": {
       "play": "https://beetlebox-studios.github.io/games/bubblefish/",
       "itch": "https://elanmakesgames.itch.io/bubblefish"
-    }
+    },
+    "repo": "BubbleFish"
   },
   {
     "title": "Book Wyrm",
@@ -59,7 +60,8 @@
     },
     "favicons": [
       "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png"
-    ]
+    ],
+    "repo": "book-wyrm"
   },
   {
     "title": "250 is...",

@@ -47,6 +47,7 @@ function googleTranslateElementInit() {
 
 function setLanguage(langCode) {
   currentLang = langCode;
+  setUrlSetting('lang', langCode === 'en' ? null : langCode);
 
   if (langCode === 'en') {
     document.cookie = 'googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -101,6 +102,19 @@ function clearBraille() {
   const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
   if (match) currentLang = decodeURIComponent(match[1]);
 
+  const fromUrl = urlSetting('lang');
+  const urlLang = LANGUAGES.find(l => l.code === fromUrl);
+  if (urlLang && urlLang.code !== currentLang) {
+    currentLang = urlLang.code;
+    if (currentLang === 'en') {
+      document.cookie = 'googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'googtrans=; path=/; domain=' + location.hostname + '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    } else {
+      document.cookie = `googtrans=/en/${currentLang}; path=/`;
+      document.cookie = `googtrans=/en/${currentLang}; path=/; domain=${location.hostname}`;
+    }
+  }
+
   function makeOption(code, iconClass, label) {
     const row = document.createElement('button');
     row.className    = 'lang-option';
@@ -128,6 +142,7 @@ function clearBraille() {
       clearBraille();
       updateSelected(lang.code);
       updateButtonFlag(lang);
+      setUrlSetting('lang', lang.code === 'en' ? null : lang.code);
       // Re-picking the active language only needs to drop Braille
       if (lang.code !== currentLang) setLanguage(lang.code);
       closeDropdown();
@@ -141,6 +156,7 @@ function clearBraille() {
     applyBraille();
     updateSelected(BRAILLE.code);
     updateButtonIcon(BRAILLE);
+    setUrlSetting('lang', BRAILLE.code);
     closeDropdown();
     window.dispatchEvent(new Event('settings:changed'));
   });
@@ -152,6 +168,7 @@ function clearBraille() {
       clearBraille();
       updateSelected(english.code);
       updateButtonFlag(english);
+      setUrlSetting('lang', null);
       if (currentLang !== 'en') setLanguage('en');
     },
   });
@@ -160,6 +177,12 @@ function clearBraille() {
   const activeLang = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0];
   updateSelected(activeLang.code);
   updateButtonFlag(activeLang);
+  if (fromUrl === BRAILLE.code) {
+    applyBraille();
+    updateSelected(BRAILLE.code);
+    updateButtonIcon(BRAILLE);
+  }
+  setUrlSetting('lang', brailleStyle ? BRAILLE.code : currentLang === 'en' ? null : currentLang);
 
   // Toggle dropdown open/close
   btn.addEventListener('click', (e) => {
