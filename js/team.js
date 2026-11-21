@@ -29,6 +29,10 @@
   const FADE          = 36;
   const GAP           = 10;
   const BOB           = 4;    // px — gentle float shared by people, planets and stickers
+  const MOON_GAP      = 3;
+  const MOON_MIN      = 14;
+  const MOON_MAX      = 22;
+  const MOON_SPEED    = 0.25; // radians a second
 
   const BEETLE_BADGE = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
@@ -148,22 +152,33 @@
     label.appendChild(name);
     label.appendChild(el('div', 'team-node-roles'));
 
-    const links = LINK_DEFS.filter(d => item.links?.[d.key]);
-    if (links.length) {
-      const row = el('div', 'team-node-links');
-      links.forEach(({ key, icon, label: aria }) => {
-        const a = el('a');
-        a.href   = item.links[key];
-        a.target = '_blank';
-        a.rel    = 'noopener';
-        a.setAttribute('aria-label', aria);
-        a.innerHTML = `<i class="${icon}"></i>`;
-        row.appendChild(a);
-      });
-      label.appendChild(row);
-    }
+    // each link is a small moon on a tight orbit around the circle
+    LINK_DEFS.filter(d => item.links?.[d.key]).forEach(({ key, icon, label: aria }) => {
+      const a = el('a', 'team-moon');
+      a.href   = item.links[key];
+      a.target = '_blank';
+      a.rel    = 'noopener';
+      a.setAttribute('aria-label', `${item.name} on ${aria}`);
+      a.title  = aria;
+      a.innerHTML = `<i class="${icon}"></i>`;
+      node.appendChild(a);
+    });
     node.appendChild(label);
     return node;
+  }
+
+  function moonSize(sz) {
+    return Math.max(MOON_MIN, Math.min(MOON_MAX, sz * 0.3));
+  }
+
+  function stepMoons(d, dt, sz) {
+    if (!d.moons.length) return;
+    if (!d.hover && !reduceMotion.matches) d.spin += MOON_SPEED * dt;
+    const r = sz / 2 + moonSize(sz) / 2 + MOON_GAP;
+    d.moons.forEach((m, i) => {
+      const a = d.spin + (i / d.moons.length) * Math.PI * 2;
+      m.style.translate = `${(Math.cos(a) * r).toFixed(1)}px ${(Math.sin(a) * r).toFixed(1)}px`;
+    });
   }
 
   // Launch buttons (BeetleBox / itch.io / Steam): small circles with a play badge, shown next to the
@@ -513,7 +528,7 @@
       d.ta = shown.includes(d) ? 1 : 0;
       d.node.classList.toggle('team-node--focus', !!focus && d.ta === 1 && view.type !== 'role');
     });
-    shown.forEach(d => { d.w = d.label.offsetWidth; d.h = d.label.offsetHeight - d.links; });
+    shown.forEach(d => { d.w = d.label.offsetWidth; d.h = d.label.offsetHeight; });
     const cellW = Math.max(...shown.map(d => d.w));
     const labelH = Math.max(...shown.map(d => d.h));
     const sizes = [];
@@ -558,7 +573,7 @@
       resetSolarLook(center);
       center.ta = 1;
       center.w = center.label.offsetWidth;
-      center.h = center.label.offsetHeight - center.links;
+      center.h = center.label.offsetHeight;
       items.push(devItem(center, cx, cy));
     }
     const n = bodyList.length;
@@ -603,7 +618,7 @@
       d.node.classList.add('team-node--small');
       d.ta = 1;
       d.w = d.label.offsetWidth;
-      d.h = d.label.offsetHeight - d.links;
+      d.h = d.label.offsetHeight;
       items.push(devItem(d, cx + Math.cos(t) * rx2, cy + Math.sin(t) * ry2));
     });
     return items;
@@ -743,6 +758,7 @@
       d.cs = Math.abs(target - (d.cs ?? target)) < 0.2 ? target : d.cs + (target - d.cs) * fade;
       const sz = d.cs;
       d.node.style.setProperty('--node-size', `${sz.toFixed(1)}px`);
+      stepMoons(d, dt, sz);
       d.node.style.left = `${d.x - sz / 2}px`;
       d.node.style.top = `${d.y - sz / 2}px`;
       d.node.style.translate = reduceMotion.matches ? '' : `${(Math.sin(t * d.f1 + d.p1) * BOB).toFixed(2)}px ${(Math.cos(t * d.f2 + d.p2) * BOB).toFixed(2)}px`;
@@ -899,10 +915,11 @@
       const node = buildDevNode(item);
       node.style.setProperty('--delay', `${i * 60}ms`);
       container.appendChild(node);
-      const links = node.querySelector('.team-node-links');
       const d = { item, node, label: node.querySelector('.team-node-label'), roles: sortRoles(item.roles, item.name),
-        links: links ? links.offsetHeight + parseFloat(getComputedStyle(links).marginTop) : 0, x: 0, y: 0, a: 0, ta: 1,
+        moons: [...node.querySelectorAll('.team-moon')], spin: i * 1.1, hover: false, x: 0, y: 0, a: 0, ta: 1,
         p1: i * 2.3 + 0.7, p2: i * 1.7 + 2.1, f1: 0.0016 + (i % 5) * 0.0002, f2: 0.0013 + (i % 7) * 0.00017 };
+      node.addEventListener('mouseenter', () => { d.hover = true; });
+      node.addEventListener('mouseleave', () => { d.hover = false; });
       setChips(d, d.roles);
       return d;
     });
@@ -911,7 +928,7 @@
       node.style.setProperty('--delay', '0ms');
       container.appendChild(node);
       const d = { item: { name: `__launch-${kind}__`, roles: [], links: {} }, launch: true, node,
-        label: node.querySelector('.team-node-label'), roles: [], links: 0, x: 0, y: 0, a: 0, ta: 0,
+        label: node.querySelector('.team-node-label'), roles: [], moons: [], x: 0, y: 0, a: 0, ta: 0,
         p1: k * 2.9, p2: k * 1.3 + 1, f1: 0.0018, f2: 0.0015 };
       launchDevs[kind] = d;
       devs.push(d);

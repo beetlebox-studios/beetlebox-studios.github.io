@@ -293,9 +293,7 @@ const CARD_TYPES = {
         window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ? { credits: item.credits, roles: item.roles ?? {} } : null }));
         clearTimeout(dwell);
         if (selected?.card === card) return;
-        card.classList.add('is-dwelling');
         dwell = setTimeout(() => {
-          card.classList.remove('is-dwelling');
           if (selected?.card === card) return;
           setSelected(card, item);
           card._hoverPicked = true;
@@ -303,7 +301,6 @@ const CARD_TYPES = {
       });
       card.addEventListener('mouseleave', () => {
         clearTimeout(dwell);
-        card.classList.remove('is-dwelling');
         card._hoverPicked = false;
         window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
       });
@@ -356,7 +353,6 @@ const CARD_TYPES = {
         // a click right after a long hover picked the card keeps it picked
         if (card._hoverPicked) { card._hoverPicked = false; return; }
         clearTimeout(dwell);
-        card.classList.remove('is-dwelling');
         toggleSelected(card, item);
       });
       card.addEventListener('keydown', e => {
