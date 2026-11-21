@@ -39,7 +39,13 @@
       "play": "https://beetlebox-studios.github.io/games/bubblefish/",
       "itch": "https://elanmakesgames.itch.io/bubblefish"
     },
-    "repo": "BubbleFish"
+    "repo": "BubbleFish",
+    "stickers": [
+      "images/stickers/bubblefish/crab.png",
+      "images/stickers/bubblefish/bubble.png",
+      "images/stickers/bubblefish/bubble.png",
+      "images/stickers/bubblefish/bubble.png"
+    ]
   },
   {
     "title": "Book Wyrm",
@@ -61,7 +67,10 @@
     "favicons": [
       "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png"
     ],
-    "repo": "book-wyrm"
+    "repo": "book-wyrm",
+    "stickers": [
+      "images/stickers/book-wyrm/worm.png"
+    ]
   },
   {
     "title": "250 is...",
@@ -147,7 +156,21 @@
     ],
     "links": {
       "itch": "https://alphons6.itch.io/learn-to-count"
-    }
+    },
+    "stickers": [
+      "images/stickers/learn-to-count/goblin.png",
+      "images/stickers/learn-to-count/dino.png",
+      "images/stickers/learn-to-count/star-1.png",
+      "images/stickers/learn-to-count/star-2.png",
+      "images/stickers/learn-to-count/star-3.png",
+      "images/stickers/learn-to-count/star-4.png",
+      "images/stickers/learn-to-count/star-5.png",
+      "images/stickers/learn-to-count/star-6.png",
+      "images/stickers/learn-to-count/star-7.png",
+      "images/stickers/learn-to-count/star-8.png",
+      "images/stickers/learn-to-count/star-9.png",
+      "images/stickers/learn-to-count/star-10.png"
+    ]
   },
   {
     "title": "Masknum Opus",
@@ -172,7 +195,12 @@
     "links": {
       "play": "https://beetlebox-studios.github.io/games/masknum-opus/",
       "itch": "https://elanmakesgames.itch.io/mask"
-    }
+    },
+    "stickers": [
+      "images/stickers/masknum-opus/coin.png",
+      "images/stickers/masknum-opus/card.png",
+      "images/stickers/masknum-opus/rose.png"
+    ]
   },
   {
     "title": "Molith",

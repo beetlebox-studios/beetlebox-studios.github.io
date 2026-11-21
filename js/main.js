@@ -8,7 +8,7 @@ function byOrder(a, b) {
 }
 
 function stickersOf(game) {
-  return [game.logo, ...(game.favicons ?? [])].filter(Boolean);
+  return [game.logo, ...(game.favicons ?? []), ...(game.stickers ?? [])].filter(Boolean);
 }
 
 function isVisible(item) {

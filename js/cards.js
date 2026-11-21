@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), logo, favicons, stickers, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -178,11 +178,13 @@ function setSelected(card, item) {
   if (selected) {
     selected.card.classList.remove('is-selected');
     selected.card.setAttribute('aria-pressed', 'false');
+    selected.card._confirmed = false;
     syncGif(selected.card);
   }
   selected = card ? { card, item } : null;
   showRelated(null);
   if (card) {
+    card._confirmed = false;
     card.classList.add('is-selected');
     card.setAttribute('aria-pressed', 'true');
     syncGif(card);
@@ -349,14 +351,19 @@ const CARD_TYPES = {
         info.classList.add('has-play');
         info.appendChild(play);
       }
-      // Clicking selects the game; once it is selected, clicking it again plays it
+      // A click selects a game or confirms a hover selection; clicking a confirmed selection plays it
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-pressed', 'false');
       const activate = () => {
         clearTimeout(dwell);
-        if (play && selected?.card === card) play.click();
-        else toggleSelected(card, item);
+        if (play && selected?.card === card) {
+          if (card._confirmed) play.click();
+          card._confirmed = true;
+          return;
+        }
+        toggleSelected(card, item);
+        card._confirmed = selected?.card === card;
       };
       card.addEventListener('click', activate);
       card.addEventListener('keydown', e => {

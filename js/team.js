@@ -35,6 +35,8 @@
   const MOON_ARC      = 3;
   const MOON_HIDE_BELOW = 40;
   const LABEL_TOP     = 6.4;
+  const PIXEL_ART_MAX = 128;
+  const PIXEL_STEP_MAX = 4;
 
   const LINK_DEFS = [
     { key: 'personal',   icon: 'fa-solid fa-globe',       label: 'Personal site' },
@@ -65,6 +67,7 @@
   let gamesData = [];
   let bodies = [];
   const aspects = new Map();
+  const natural = new Map();
   let projectRoles = {};
   let roleOrder = [];
   let size = 72;
@@ -359,7 +362,8 @@
     const img = new Image();
     img.onload = () => {
       aspects.set(src, img.naturalWidth / img.naturalHeight);
-      if (img.naturalWidth <= 128) bodies.filter(b => b.src === src && b.kind === 'sticker').forEach(b => b.node.classList.add('team-game--pixel'));
+      natural.set(src, { w: img.naturalWidth, h: img.naturalHeight });
+      if (img.naturalWidth <= PIXEL_ART_MAX) bodies.filter(b => b.src === src && b.kind === 'sticker').forEach(b => b.node.classList.add('team-game--pixel'));
       arrange();
     };
     img.onerror = () => dropSticker(src);
@@ -418,6 +422,18 @@
       if (stickers.length) stickers.forEach(src => bodies.push(buildBody('sticker', game, src, bodies.length)));
       else if (game.image) bodies.push(buildBody('planet', game, game.image, bodies.length));
     });
+  }
+
+  const leadOf = game => bodies.find(b => b.game === game && b.kind === 'sticker');
+
+  function fitSize(src, box, step) {
+    const n = natural.get(src);
+    if (n && Math.max(n.w, n.h) <= PIXEL_ART_MAX) {
+      const k = step ?? Math.min(PIXEL_STEP_MAX, Math.max(1, Math.round(box / Math.max(n.w, n.h))));
+      return { w: n.w * k, h: n.h * k };
+    }
+    const aspect = aspects.get(src) || 1;
+    return aspect >= 1 ? { w: box, h: box / aspect } : { w: box * aspect, h: box };
   }
 
   const sameName = (a, b) => a.toLowerCase() === b.toLowerCase();
@@ -485,38 +501,30 @@
     return { ref: b, x, y, l: -w / 2, r: w / 2, t: -h / 2, b: h / 2 + (b.kind === 'planet' ? 22 : 0), fixed };
   }
 
-  // the selected game's cover with its stickers in a row under it
+  // the selected game's lead sticker in the middle with the rest clustered around it, or its cover
   function centerStack(bs, w, h) {
-    const cover = bs.find(b => b.kind === 'cover');
-    const stickers = bs.filter(b => b.kind === 'sticker');
-    const gap = 16;
-    let coverW = 0;
-    let coverH = 0;
-    if (cover) {
-      coverW = Math.min(w * 0.5, 260);
-      coverH = coverW / (aspects.get(cover.src) || 2.1);
+    const [lead, ...extra] = bs.filter(b => b.kind === 'sticker');
+    if (!lead) {
+      const cover = bs.find(b => b.kind === 'cover');
+      if (!cover) return [];
+      const coverW = Math.min(w * 0.5, 260);
+      return [bodyItem(cover, w / 2, h / 2, coverW, coverW / (aspects.get(cover.src) || 2.1), true)];
     }
-    const n = stickers.length;
-    let each = Math.min(w * 0.28, h * 0.17) * (n > 1 ? 0.78 : 1);
-    if (n > 1) each = Math.min(each, (w * 0.6 - gap * (n - 1)) / n);
-    const sizes = stickers.map(b => {
-      const aspect = aspects.get(b.src) || 1;
-      const ww = aspect >= 1 ? each : each * aspect;
-      return { b, ww, hh: ww / aspect };
-    });
-    const rowH = sizes.length ? Math.max(...sizes.map(s => s.hh)) : 0;
-    const stackH = coverH + (cover && sizes.length ? gap : 0) + rowH;
-    const out = [];
-    let y = h / 2 - stackH / 2;
-    if (cover) {
-      out.push(bodyItem(cover, w / 2, y + coverH / 2, coverW, coverH, true));
-      y += coverH + gap;
-    }
-    const rowW = sizes.reduce((sum, s) => sum + s.ww, 0) + gap * Math.max(0, sizes.length - 1);
-    let x = w / 2 - rowW / 2;
-    sizes.forEach(({ b, ww, hh }) => {
-      out.push(bodyItem(b, x + ww / 2, y + rowH / 2, ww, hh));
-      x += ww + gap;
+    const big = fitSize(lead.src, Math.min(w * 0.28, h * 0.17) * (extra.length ? 0.9 : 1));
+    const out = [bodyItem(lead, w / 2, h / 2, big.w, big.h)];
+    if (!extra.length) return out;
+    const largest = Math.max(...extra.map(b => Math.max(natural.get(b.src)?.w ?? 16, natural.get(b.src)?.h ?? 16)));
+    const target = Math.min(w, h) * (extra.length > 6 ? 0.14 : 0.2);
+    const step = Math.min(PIXEL_STEP_MAX, Math.max(1, Math.round(target / largest)));
+    const rx = big.w / 2 + Math.min(w * 0.2, 90);
+    const ry = big.h / 2 + Math.min(h * 0.14, 70);
+    const copies = new Map();
+    extra.forEach((b, i) => {
+      const copy = copies.get(b.src) ?? 0;
+      copies.set(b.src, copy + 1);
+      const s = fitSize(b.src, target, Math.max(1, step - copy));
+      const a = -Math.PI / 2 + ((i + 0.5) / extra.length) * Math.PI * 2;
+      out.push(bodyItem(b, w / 2 + Math.cos(a) * rx, h / 2 + Math.sin(a) * ry, s.w, s.h));
     });
     return out;
   }
@@ -641,9 +649,9 @@
       const mine = bodies.filter(b => b.game.title === view.title);
       const stickers = mine.filter(b => b.kind === 'sticker');
       active = stickers.length ? stickers : mine.filter(b => b.kind === 'cover');
-    } else if (view.type === 'role') active = bodies.filter(b => b.kind === 'sticker');
+    } else if (view.type === 'role') active = bodies.filter(b => b.kind === 'sticker' && b === leadOf(b.game));
     else if (view.type === 'person') {
-      active = bodies.filter(b => b.kind !== 'cover' && gameHas(b.game, view.name));
+      active = bodies.filter(b => gameHas(b.game, view.name) && (b.kind === 'planet' || b === leadOf(b.game)));
     }
 
     let items;

@@ -411,7 +411,9 @@ h1, h2, h3, h4, h5, h6, p, a {
   padding: 0.6rem 0.8rem;
   background: radial-gradient(ellipse at bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 40%, transparent 72%);
   pointer-events: none;
+  transition: opacity 0.25s var(--ease);
 }
+.work-img-wrap:has(.work-gif.is-shown.is-loaded) .work-jam-badge { opacity: 0; }
 .work-jam-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
