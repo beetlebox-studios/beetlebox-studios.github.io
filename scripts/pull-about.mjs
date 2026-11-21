@@ -42,7 +42,6 @@ for (const game of games) {
   if (!game.repo) continue;
   try {
     const text = await readme(game.repo);
-    // private repos also answer 404 when the token can't see them, so a 404 never wipes an entry
     if (text === null) {
       console.warn(`${game.title}: no README visible in ${game.repo}`);
       if (previous[game.title]) result[game.title] = previous[game.title];
