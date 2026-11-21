@@ -1,0 +1,54 @@
+name: About
+
+on:
+  schedule:
+    - cron: '43 9 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pull-about.mjs'
+      - '.github/workflows/about.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: about
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Pull game abouts from repo READMEs
+        env:
+          GH_TOKEN: ${{ secrets.GAME_README_TOKEN }}
+        run: node scripts/pull-about.mjs
+
+      - name: Open or update PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain data/about.json)" ]; then
+            echo "About unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c repo/about-sync
+          git add data/about.json
+          git commit -m "data: pull game abouts from repo readmes"
+          git push -f origin repo/about-sync
+          if [ -z "$(gh pr list --head repo/about-sync --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base main --head repo/about-sync \
+              --title "data: pull game abouts from repo readmes" \
+              --body "Pulled from each game repo's README pitch and About section."
+          fi
