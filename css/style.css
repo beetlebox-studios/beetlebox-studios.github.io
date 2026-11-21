@@ -1209,6 +1209,7 @@ body {
   background: color-mix(in oklch, var(--page-bg) 85%, transparent);
 }
 .team-game-img--icon { image-rendering: pixelated; }
+.team-game--pixel .team-sticker { image-rendering: pixelated; }
 @keyframes game-pan {
   from { object-position: 0% 40%; transform: scale(1.1); }
   to   { object-position: 100% 60%; transform: scale(1.4); }
@@ -1230,7 +1231,6 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
   rotate: var(--rot, 0deg);
   /* soft drop shadow only (no outline) */
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
