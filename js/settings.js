@@ -25,3 +25,15 @@ document.getElementById('settings-reset')?.addEventListener('click', e => {
   SETTINGS.filter(s => !s.isDefault()).forEach(s => s.reset());
   refreshSettingsReset();
 });
+
+function urlSetting(name) {
+  return new URLSearchParams(location.search).get(name);
+}
+
+function setUrlSetting(name, value) {
+  const params = new URLSearchParams(location.search);
+  if (value === null || value === undefined) params.delete(name);
+  else params.set(name, value);
+  const query = params.toString();
+  history.replaceState(history.state, '', location.pathname + (query ? '?' + query : '') + location.hash);
+}

@@ -7,6 +7,10 @@ function byOrder(a, b) {
   return (a.order ?? Infinity) - (b.order ?? Infinity);
 }
 
+function stickersOf(game) {
+  return [game.logo, ...(game.favicons ?? [])].filter(Boolean);
+}
+
 function isVisible(item) {
   return ADMIN_MODE || !item.draft;
 }

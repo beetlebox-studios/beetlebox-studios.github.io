@@ -28,6 +28,7 @@
   const RELEASE_MS    = 160;
   const FADE          = 36;
   const GAP           = 10;
+  const BOB           = 4;    // px — gentle float shared by people, planets and stickers
 
   const BEETLE_BADGE = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
@@ -55,13 +56,15 @@
   let launchActive = new Set();
   const launchDevs = {};
   let selectedPerson = null;
-  let solar = null;
-  let solarTimer = 0;
+  let selectedRole = null;
+  let view = { type: 'all' };
   let gamesData = [];
-  let gameNodes = [];
+  let bodies = [];
+  const aspects = new Map();
   let projectRoles = {};
   let roleOrder = [];
   let size = 72;
+  let panel = { cx: 0, cy: 0, hw: 1, hh: 1 };
   let snap = true;
   let last = 0;
   let release = 0;
@@ -215,7 +218,15 @@
     if (d.chips === key) return;
     d.chips = key;
     const row = d.label.querySelector('.team-node-roles');
-    row.replaceChildren(...roles.map(r => text('span', 'team-chip', r)));
+    row.replaceChildren(...roles.map(r => {
+      const chip = text('span', 'pill team-chip', r);
+      if (!d.launch) {
+        chip.addEventListener('click', e => { e.stopPropagation(); selectRole(r); });
+        chip.setAttribute('role', 'button');
+      }
+      chip.style.setProperty('--shift', Math.round(Math.max(roleOrder.indexOf(r), 0) * 360 / Math.max(roleOrder.length, 1)));
+      return chip;
+    }));
   }
 
   // ── Layout + web ───────────────────────────────────────────────────────────
@@ -310,25 +321,198 @@
     });
   }
 
-  function arrange() {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    if (!w || !h || !devs.length) return;
-    if (solar) { arrangeSolar(w, h); return; }
-    devs.forEach(d => resetSolarLook(d));
+  function resetSolarLook(d) {
+    if (d.sz === undefined) return;
+    d.sz = undefined;
+    d.node.classList.remove('team-node--small');
+  }
 
-    const people = devs.filter(d => !d.launch);
+  // The universe: every sticker, planet and cover is a permanent object, handled like the people circles.
+  // Each view works out where everything should land (a cramming pass that spreads items apart). Objects
+  // that stay in view ease to their new spot, ones that join fade in where they land, and ones that leave
+  // fade out where they are.
+
+  // width / height of an image, so stickers and covers keep their shape; circles are 1
+  function preload(src) {
+    if (!src || aspects.has(src)) return;
+    aspects.set(src, 1);
+    const img = new Image();
+    img.onload = () => {
+      aspects.set(src, img.naturalWidth / img.naturalHeight);
+      if (img.naturalWidth <= 128) bodies.filter(b => b.src === src && b.kind === 'sticker').forEach(b => b.node.classList.add('team-game--pixel'));
+      arrange();
+    };
+    img.onerror = () => dropSticker(src);
+    img.src = src;
+  }
+
+  function buildBody(kind, game, src, i) {
+    const node = el(kind === 'cover' ? 'div' : 'a', kind === 'cover' ? 'team-cover' : kind === 'sticker' ? 'team-game team-game--sticker' : 'team-game');
+    if (kind === 'sticker') {
+      node.appendChild(makeImg(src, game.title, 'team-sticker'));
+    } else if (kind === 'cover') {
+      node.appendChild(makeImg(src, game.title, 'team-cover-img'));
+    } else {
+      node.tabIndex = 0;
+      node.setAttribute('role', 'button');
+      node.setAttribute('aria-label', `Open ${game.title}`);
+      const ring = el('div', 'team-game-ring');
+      if (game.image) ring.appendChild(makeImg(game.image, game.title, 'team-game-img'));
+      node.appendChild(ring);
+      node.appendChild(text('span', 'team-game-label', game.title));
+      node.style.setProperty('--pan', `${9 + (i * 2.3) % 6}s`);
+      node.style.setProperty('--fd', `${-(i * 1.3)}s`);
+      const pick = () => window.dispatchEvent(new CustomEvent('game:pick', { detail: game.title }));
+      node.addEventListener('click', pick);
+      node.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        pick();
+      });
+    }
+    node.style.width = '0px';
+    node.style.height = '0px';
+    container.appendChild(node);
+    preload(src);
+    return {
+      kind, game, src, node, i, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, w: 0, h: 0, a: 0, active: false,
+      p1: i * 1.9 + 0.5, p2: i * 2.7 + 1.3, f1: 0.0017 + (i % 5) * 0.0002, f2: 0.0014 + (i % 7) * 0.00017,
+    };
+  }
+
+  function dropSticker(src) {
+    const gone = bodies.filter(b => b.src === src && b.kind === 'sticker');
+    if (!gone.length) return;
+    gone.forEach(b => b.node.remove());
+    bodies = bodies.filter(b => !gone.includes(b));
+    gone.forEach(({ game }) => {
+      if (game.image && !bodies.some(b => b.game === game && b.kind !== 'cover')) bodies.push(buildBody('planet', game, game.image, bodies.length));
+    });
+    arrange();
+  }
+
+  function buildBodies() {
+    gamesData.filter(g => !g.draft).forEach(game => {
+      const stickers = stickersOf(game);
+      if (game.image) bodies.push(buildBody('cover', game, game.image, bodies.length));
+      if (stickers.length) stickers.forEach(src => bodies.push(buildBody('sticker', game, src, bodies.length)));
+      else if (game.image) bodies.push(buildBody('planet', game, game.image, bodies.length));
+    });
+  }
+
+  const sameName = (a, b) => a.toLowerCase() === b.toLowerCase();
+  const gameHas = (game, name) => (game.credits ?? []).some(c => sameName(c, name));
+
+  // Spread overlapping items apart (and keep them inside the panel), pulling gently back toward where each
+  // would like to be. Items carry their centre (x, y) and extents (l, r, t, b) around it.
+  function pack(items, w, h) {
+    const M = 10;
+    const PAD = 6;
+    items.forEach(it => { it.ox = it.x; it.oy = it.y; });
+    const resolve = () => {
+      let moved = false;
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          const A = items[i];
+          const B = items[j];
+          if (A.fixed && B.fixed) continue;
+          const px = Math.min(A.x + A.r + M - (B.x + B.l), B.x + B.r + M - (A.x + A.l));
+          const py = Math.min(A.y + A.b + M - (B.y + B.t), B.y + B.b + M - (A.y + A.t));
+          if (px <= 0 || py <= 0) continue;
+          moved = true;
+          const sa = A.fixed ? 0 : B.fixed ? 1 : 0.5;
+          const sb = B.fixed ? 0 : A.fixed ? 1 : 0.5;
+          if (px < py) {
+            const dir = A.x + (A.l + A.r) / 2 <= B.x + (B.l + B.r) / 2 ? -1 : 1;
+            A.x += dir * px * sa;
+            B.x -= dir * px * sb;
+          } else {
+            const dir = A.y + (A.t + A.b) / 2 <= B.y + (B.t + B.b) / 2 ? -1 : 1;
+            A.y += dir * py * sa;
+            B.y -= dir * py * sb;
+          }
+        }
+      }
+      items.forEach(it => {
+        if (it.fixed) return;
+        it.x = Math.min(w - PAD - it.r, Math.max(PAD - it.l, it.x));
+        it.y = Math.min(h - PAD - it.b, Math.max(PAD - it.t, it.y));
+      });
+      return moved;
+    };
+    for (let iter = 0; iter < 240; iter++) {
+      items.forEach(it => {
+        if (it.fixed) return;
+        it.x += (it.ox - it.x) * 0.015;
+        it.y += (it.oy - it.y) * 0.015;
+      });
+      resolve();
+    }
+    let clean = !resolve();
+    for (let iter = 0; iter < 40 && !clean; iter++) clean = !resolve();
+    return clean;
+  }
+
+  function devItem(d, x, y) {
+    const sz = d.sz ?? size;
+    const half = Math.max(sz, d.w || sz) / 2;
+    return { ref: d, x, y, l: -half, r: half, t: -sz / 2, b: sz / 2 + 6 + (d.h || 0) };
+  }
+
+  function bodyItem(b, x, y, w, h, fixed = false) {
+    b.w = w;
+    b.h = h;
+    return { ref: b, x, y, l: -w / 2, r: w / 2, t: -h / 2, b: h / 2 + (b.kind === 'planet' ? 22 : 0), fixed };
+  }
+
+  // the selected game's cover with its stickers in a row under it
+  function centerStack(bs, w, h) {
+    const cover = bs.find(b => b.kind === 'cover');
+    const stickers = bs.filter(b => b.kind === 'sticker');
+    const gap = 16;
+    let coverW = 0;
+    let coverH = 0;
+    if (cover) {
+      coverW = Math.min(w * 0.5, 260);
+      coverH = coverW / (aspects.get(cover.src) || 2.1);
+    }
+    const n = stickers.length;
+    let each = Math.min(w * 0.28, h * 0.17) * (n > 1 ? 0.78 : 1);
+    if (n > 1) each = Math.min(each, (w * 0.6 - gap * (n - 1)) / n);
+    const sizes = stickers.map(b => {
+      const aspect = aspects.get(b.src) || 1;
+      const ww = aspect >= 1 ? each : each * aspect;
+      return { b, ww, hh: ww / aspect };
+    });
+    const rowH = sizes.length ? Math.max(...sizes.map(s => s.hh)) : 0;
+    const stackH = coverH + (cover && sizes.length ? gap : 0) + rowH;
+    const out = [];
+    let y = h / 2 - stackH / 2;
+    if (cover) {
+      out.push(bodyItem(cover, w / 2, y + coverH / 2, coverW, coverH, true));
+      y += coverH + gap;
+    }
+    const rowW = sizes.reduce((sum, s) => sum + s.ww, 0) + gap * Math.max(0, sizes.length - 1);
+    let x = w / 2 - rowW / 2;
+    sizes.forEach(({ b, ww, hh }) => {
+      out.push(bodyItem(b, x + ww / 2, y + rowH / 2, ww, hh));
+      x += ww + gap;
+    });
+    return out;
+  }
+
+  // ring layout of the people shown in the all / game / role views
+  function planRing(w, h, base, people, bodyList) {
     let shown = people.filter(d => !focus || focus.has(d.item.name.toLowerCase()));
     if (!shown.length) shown = people;
     shown = [...shown, ...Object.entries(launchDevs).filter(([kind]) => launchActive.has(kind)).map(([, d]) => d)];
     devs.forEach(d => {
+      resetSolarLook(d);
       const own = focus && projectRoles[d.item.name];
       setChips(d, own ? sortRoles(own, d.item.name) : d.roles);
       d.ta = shown.includes(d) ? 1 : 0;
-      d.node.classList.toggle('team-node--focus', !!focus && d.ta === 1);
+      d.node.classList.toggle('team-node--focus', !!focus && d.ta === 1 && view.type !== 'role');
     });
-
-    const base = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
     shown.forEach(d => { d.w = d.label.offsetWidth; d.h = d.label.offsetHeight - d.links; });
     const cellW = Math.max(...shown.map(d => d.w));
     const labelH = Math.max(...shown.map(d => d.h));
@@ -336,7 +520,7 @@
     for (let s = base; s >= 44; s -= 4) sizes.push(s);
     let best = null;
     for (const s of sizes) {
-      for (let k = Math.min(1, 0.35 + 0.1 * shown.length); k <= 1.001 && !best; k += 0.05) {
+      for (let k = bodyList.length ? 1 : Math.min(1, 0.35 + 0.1 * shown.length); k <= 1.001 && !best; k += 0.05) {
         const pts = slots(shown.length, w, h, s, Math.max(s, cellW), labelH, k);
         if (fits(pts, s, shown, w, h)) best = { s, pts };
       }
@@ -355,13 +539,181 @@
     }
     size = best.s;
     container.style.setProperty('--node-size', `${size}px`);
-    shown.forEach((d, i) => { d.tx = best.pts[i].x; d.ty = best.pts[i].y; });
+    return shown.map((d, i) => devItem(d, best.pts[i].x, best.pts[i].y));
+  }
+
+  // a selected creator in the middle, their games on a ring around them and the people they worked with
+  // further out, each shown once at the average angle of the games they share
+  function planPerson(w, h, base, people, bodyList, scale = 1) {
+    const cx = w / 2;
+    const cy = h / 2;
+    const small = Math.max(28, Math.round(base * 0.52 * Math.min(1, scale + 0.2)));
+    size = base;
+    container.style.setProperty('--node-size', `${base}px`);
+    const name = view.name;
+    devs.forEach(d => { d.ta = 0; d.node.classList.remove('team-node--focus'); });
+    const items = [];
+    const center = people.find(d => sameName(d.item.name, name));
+    if (center) {
+      resetSolarLook(center);
+      center.ta = 1;
+      center.w = center.label.offsetWidth;
+      center.h = center.label.offsetHeight - center.links;
+      items.push(devItem(center, cx, cy));
+    }
+    const n = bodyList.length;
+    const rx1 = (w / 2) * 0.55;
+    const ry1 = (h / 2) * 0.44;
+    const angles = bodyList.map((_, i) => -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2);
+    const pts = angles.map(a => ({ x: cx + Math.cos(a) * rx1, y: cy + Math.sin(a) * ry1 }));
+    let gap = w * 0.25;
+    if (n > 1) gap = Math.min(...pts.map((p, i) => Math.hypot(p.x - pts[(i + 1) % n].x, p.y - pts[(i + 1) % n].y)));
+    const gD = Math.max(34, Math.min(w * 0.17, gap * 0.8) * scale);
+    bodyList.forEach((b, i) => {
+      const aspect = b.kind === 'sticker' ? aspects.get(b.src) || 1 : 1;
+      const ww = aspect >= 1 ? gD : gD * aspect;
+      items.push(bodyItem(b, pts[i].x, pts[i].y, ww, ww / aspect));
+    });
+
+    const collab = people.filter(d => d !== center && bodyList.some(b => gameHas(b.game, d.item.name)));
+    const rx2 = w / 2 - small / 2 - 12;
+    const ry2 = Math.min(h / 2 - small / 2 - 26, ry1 * (rx2 / rx1));
+    const placed = collab.map(d => {
+      const mine = bodyList.map((b, i) => (gameHas(b.game, d.item.name) ? i : -1)).filter(i => i >= 0);
+      const sx = mine.reduce((sum, i) => sum + Math.cos(angles[i]), 0);
+      const sy = mine.reduce((sum, i) => sum + Math.sin(angles[i]), 0);
+      return { d, t: Math.atan2(sy, sx) };
+    }).sort((a, b) => a.t - b.t);
+    const minSep = Math.min(Math.PI, (small + 34) / ((rx2 + ry2) / 2));
+    for (let pass = 0; pass < 80 && placed.length > 1; pass++) {
+      for (let i = 0; i < placed.length; i++) {
+        const a = placed[i];
+        const b = placed[(i + 1) % placed.length];
+        let gapA = b.t - a.t;
+        if (i === placed.length - 1) gapA += Math.PI * 2;
+        if (gapA < minSep) {
+          const push = (minSep - gapA) / 2;
+          a.t -= push;
+          b.t += push;
+        }
+      }
+    }
+    placed.forEach(({ d, t }) => {
+      d.sz = small;
+      d.node.classList.add('team-node--small');
+      d.ta = 1;
+      d.w = d.label.offsetWidth;
+      d.h = d.label.offsetHeight - d.links;
+      items.push(devItem(d, cx + Math.cos(t) * rx2, cy + Math.sin(t) * ry2));
+    });
+    return items;
+  }
+
+  function arrange() {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (!w || !h || !devs.length) return;
+    panel = { cx: w / 2, cy: h / 2, hw: w / 2, hh: h / 2 };
+    const people = devs.filter(d => !d.launch);
+    const base = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
+
+    // which permanent objects take part in this view
+    let active = [];
+    if (view.type === 'game') {
+      // a game with stickers shows just those, the cover is only a stand-in for games without any
+      const mine = bodies.filter(b => b.game.title === view.title);
+      const stickers = mine.filter(b => b.kind === 'sticker');
+      active = stickers.length ? stickers : mine.filter(b => b.kind === 'cover');
+    } else if (view.type === 'role') active = bodies.filter(b => b.kind === 'sticker');
+    else if (view.type === 'person') {
+      active = bodies.filter(b => b.kind !== 'cover' && gameHas(b.game, view.name));
+    }
+
+    let items;
+    if (view.type === 'person') {
+      // shrink the planets until the cramming pass can fit everything without overlaps
+      for (const scale of [1, 0.85, 0.72, 0.6]) {
+        items = planPerson(w, h, base, people, active, scale);
+        if (pack(items, w, h)) break;
+      }
+    } else {
+      items = planRing(w, h, base, people, active);
+      if (view.type === 'game') items.push(...centerStack(active, w, h));
+      else if (view.type === 'role') {
+        // the stickers stay: a row of them in the middle of the people
+        const each = Math.min(w * 0.18, h * 0.12);
+        const total = active.length * each + Math.max(0, active.length - 1) * 14;
+        active.forEach((b, i) => {
+          const aspect = aspects.get(b.src) || 1;
+          const ww = aspect >= 1 ? each : each * aspect;
+          items.push(bodyItem(b, w / 2 - total / 2 + each / 2 + i * (each + 14), h / 2, ww, ww / aspect));
+        });
+      }
+    }
+
+    if (view.type !== 'person') pack(items, w, h);
+
+    bodies.forEach(b => {
+      const it = items.find(x => x.ref === b);
+      b.active = !!it;
+      if (!it) return;
+      b.tx = it.x;
+      b.ty = it.y;
+      b.node.style.width = `${b.w}px`;
+      b.node.style.height = `${b.h}px`;
+      if (b.a < 0.05) { b.x = b.tx; b.y = b.ty; b.vx = 0; b.vy = 0; }
+    });
     devs.forEach(d => {
+      const it = items.find(x => x.ref === d);
+      if (it) { d.tx = it.x; d.ty = it.y; }
       if (d.tx === undefined) { d.tx = w / 2; d.ty = h / 2; }
-      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; }
+      const sz = d.sz ?? size;
+      if (snap) { d.x = d.tx; d.y = d.ty; d.a = d.ta; d.vx = 0; d.vy = 0; d.cs = sz; }
+      // anyone who was out of sight appears where they will sit, at their new size
+      if (d.ta === 1 && d.a < 0.05) { d.x = d.tx; d.y = d.ty; d.vx = 0; d.vy = 0; d.cs = sz; }
     });
     updateAnchors();
     snap = false;
+  }
+
+  // The spring runs around the panel centre (radius and angle, scaled to the panel's shape), so things
+  // travelling between views swing around the ring instead of cutting across the middle. vx and vy hold
+  // the radial and angular speeds.
+  function orbit(o, dt) {
+    const { cx, cy, hw, hh } = panel;
+    const u = (o.x - cx) / hw;
+    const v = (o.y - cy) / hh;
+    const tu = (o.tx - cx) / hw;
+    const tv = (o.ty - cy) / hh;
+    let r = Math.hypot(u, v);
+    let th = Math.atan2(v, u);
+    const tr = Math.hypot(tu, tv);
+    const tth = Math.atan2(tv, tu);
+    let dth = tth - th;
+    dth -= Math.round(dth / (Math.PI * 2)) * Math.PI * 2;
+    if (r < 0.04 || tr < 0.04) { dth = 0; o.vy = 0; }
+    o.vx = (o.vx || 0) + (SPRING * (tr - r) - DAMP * (o.vx || 0)) * dt;
+    o.vy = (o.vy || 0) + (SPRING * dth - DAMP * (o.vy || 0)) * dt;
+    r = Math.max(0, r + o.vx * dt);
+    th = r < 0.04 && tr >= 0.04 ? tth : th + o.vy * dt;
+    o.x = cx + Math.cos(th) * r * hw;
+    o.y = cy + Math.sin(th) * r * hh;
+  }
+
+  function stepBodies(t, dt, fade) {
+    const amp = reduceMotion.matches ? 0 : BOB;
+    bodies.forEach(b => {
+      orbit(b, dt);
+      b.a +=((b.active ? 1 : 0) - b.a) * fade;
+      b.node.style.left = `${b.x - b.w / 2}px`;
+      b.node.style.top = `${b.y - b.h / 2}px`;
+      b.node.style.translate = `${(Math.sin(t * b.f1 + b.p1) * amp).toFixed(2)}px ${(Math.cos(t * b.f2 + b.p2) * amp).toFixed(2)}px`;
+      const settled = b.active && b.a > 0.995;
+      b.node.style.opacity = settled ? '' : b.a.toFixed(3);
+      b.node.style.scale = settled ? '' : (0.7 + 0.3 * b.a).toFixed(3);
+      b.node.style.visibility = !b.active && b.a < 0.01 ? 'hidden' : '';
+      b.node.classList.toggle('team-game--out', !b.active);
+    });
   }
 
   function nearDev(p) {
@@ -382,16 +734,18 @@
     last = t;
     const drift = reduceMotion.matches ? 0 : DRIFT;
     const fade = 1 - Math.exp(-FADE_RATE * dt);
+    stepBodies(t, dt, fade);
     devs.forEach(d => {
-      d.vx = (d.vx || 0) + (SPRING * (d.tx - d.x) - DAMP * (d.vx || 0)) * dt;
-      d.vy = (d.vy || 0) + (SPRING * (d.ty - d.y) - DAMP * (d.vy || 0)) * dt;
-      d.x += d.vx * dt;
-      d.y += d.vy * dt;
+      orbit(d, dt);
       d.a += (d.ta - d.a) * fade;
       d.lf = (d.lf ?? 1) + (1 - (d.lf ?? 1)) * fade;
-      const sz = d.sz ?? size;
+      const target = d.sz ?? size;
+      d.cs = Math.abs(target - (d.cs ?? target)) < 0.2 ? target : d.cs + (target - d.cs) * fade;
+      const sz = d.cs;
+      d.node.style.setProperty('--node-size', `${sz.toFixed(1)}px`);
       d.node.style.left = `${d.x - sz / 2}px`;
       d.node.style.top = `${d.y - sz / 2}px`;
+      d.node.style.translate = reduceMotion.matches ? '' : `${(Math.sin(t * d.f1 + d.p1) * BOB).toFixed(2)}px ${(Math.cos(t * d.f2 + d.p2) * BOB).toFixed(2)}px`;
       const settled = d.a > 0.995;
       d.node.style.opacity = settled ? '' : d.a.toFixed(3);
       d.node.style.scale = settled ? '' : (0.7 + 0.3 * d.a).toFixed(3);
@@ -449,189 +803,69 @@
     const pick = e.detail;
     selected = !!pick;
     selectedPerson = null;
-    leaveSolar();
+    selectedRole = null;
+    view = pick ? { type: 'game', title: pick.title } : { type: 'all' };
     focus = pick?.credits?.length ? new Set(pick.credits.map(n => n.toLowerCase())) : null;
     projectRoles = pick?.roles ?? {};
     launchActive = new Set((pick?.launch ?? []).map(l => l.kind));
     if (pick?.launch?.length) setLaunch(pick.launch, pick.title);
     markSelectedPerson();
     arrange();
+    markRoleChips();
   });
 
   function markSelectedPerson() {
     devs.forEach(d => d.node.classList.toggle('team-node--selected', !d.launch && d.item.name === selectedPerson));
   }
 
-  // ── Solar system: a selected creator sits in the middle, their games orbit them as circle-cropped
-  // images, and the people they worked with float further out, each shown once ────────────────────
-  function resetSolarLook(d) {
-    if (d.sz === undefined) return;
-    d.sz = undefined;
-    d.solarPlaced = false;
-    d.node.style.removeProperty('--node-size');
-    d.node.classList.remove('team-node--small');
+  function markRoleChips() {
+    devs.forEach(d => d.label.querySelectorAll('.team-chip').forEach(c => c.classList.toggle('team-chip--selected', !!selectedRole && c.textContent === selectedRole)));
   }
 
-  function buildGameNode(game, i) {
-    const node = el('a', 'team-game');
-    node.tabIndex = 0;
-    node.setAttribute('role', 'button');
-    node.setAttribute('aria-label', `Open ${game.title}`);
-    node.style.setProperty('--float', `${6 + (i * 1.7) % 4}s`);
-    node.style.setProperty('--pan', `${9 + (i * 2.3) % 6}s`);
-    node.style.setProperty('--fd', `${-(i * 1.3)}s`);
-    const ring = el('div', 'team-game-ring');
-    // the favicon is the planet when the game has one; otherwise the thumbnail is cropped
-    const art = game.favicon || game.image;
-    if (art) ring.appendChild(makeImg(art, game.title, game.favicon ? 'team-game-img team-game-img--icon' : 'team-game-img'));
-    node.appendChild(ring);
-    node.appendChild(text('span', 'team-game-label', game.title));
-    const pick = () => window.dispatchEvent(new CustomEvent('game:pick', { detail: game.title }));
-    node.addEventListener('click', pick);
-    node.addEventListener('keydown', e => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      e.preventDefault();
-      pick();
-    });
-    container.appendChild(node);
-    return node;
-  }
-
-  // Planets are never faded: the panel is a clip layer, so they slide past its edge and get cut off by it
-  function offscreen(x, y) {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    const dx = x - w / 2 || 1;
-    const dy = y - h / 2 || 1;
-    const k = Math.max(w, h) / Math.hypot(dx, dy);
-    return { x: w / 2 + dx * k * 1.2, y: h / 2 + dy * k * 1.2 };
-  }
-
-  function clearGameNodes() {
-    const old = gameNodes;
-    gameNodes = [];
-    old.forEach(n => {
-      const d = parseFloat(n.style.width) / 2 || 0;
-      const out = offscreen(parseFloat(n.style.left) + d, parseFloat(n.style.top) + d);
-      n.style.left = `${out.x - d}px`;
-      n.style.top = `${out.y - d}px`;
-      setTimeout(() => n.remove(), 900);
-    });
-  }
-
-  function enterSolar(name) {
-    clearTimeout(solarTimer);
-    clearGameNodes();
-    const lower = name.toLowerCase();
-    const games = gamesData.filter(g => !g.draft && (g.credits ?? []).some(c => c.toLowerCase() === lower));
-    const names = new Set(games.flatMap(g => g.credits ?? []).map(c => c.toLowerCase()));
-    names.delete(lower);
-    const collab = devs.filter(d => !d.launch && names.has(d.item.name.toLowerCase()));
-    solar = { name, games, collab, shown: false };
-    gameNodes = games.map(buildGameNode);
-    // everyone else hides first, then the collaborators come back smaller around the games
-    solarTimer = setTimeout(() => { if (solar) { solar.shown = true; arrange(); } }, 520);
-  }
-
-  function leaveSolar() {
-    clearTimeout(solarTimer);
-    solar = null;
-    clearGameNodes();
-    devs.forEach(resetSolarLook);
-  }
-
-  function arrangeSolar(w, h) {
-    const cx = w / 2;
-    const cy = h / 2;
-    const base = Math.max(44, Math.min(84, Math.min(w, h) * 0.15));
-    const small = Math.round(base * 0.52);
-    size = base;
-    container.style.setProperty('--node-size', `${base}px`);
-
-    devs.forEach(d => { d.ta = 0; });
-    const center = devs.find(d => !d.launch && d.item.name === solar.name);
-    if (center) { center.ta = 1; center.tx = cx; center.ty = cy; center.sz = undefined; }
-
-    // games on an ellipse around the middle
-    const n = solar.games.length;
-    const rx1 = (w / 2) * 0.55;
-    const ry1 = (h / 2) * 0.5;
-    const angles = solar.games.map((_, i) => -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2);
-    const pts = angles.map(a => ({ x: cx + Math.cos(a) * rx1, y: cy + Math.sin(a) * ry1 }));
-    let gap = w * 0.25;
-    if (n > 1) gap = Math.min(...pts.map((p, i) => Math.hypot(p.x - pts[(i + 1) % n].x, p.y - pts[(i + 1) % n].y)));
-    const gD = Math.max(40, Math.min(w * 0.2, gap * 0.82));
-    gameNodes.forEach((node, i) => {
-      node.style.width = `${gD}px`;
-      node.style.height = `${gD}px`;
-      if (!node.dataset.placed) {
-        // start beyond the panel edge, then drift into orbit
-        const out = offscreen(pts[i].x, pts[i].y);
-        node.style.transition = 'none';
-        node.style.left = `${out.x - gD / 2}px`;
-        node.style.top = `${out.y - gD / 2}px`;
-        node.getBoundingClientRect();
-        node.style.transition = '';
-        node.dataset.placed = '1';
-      }
-      node.style.transitionDelay = `${i * 70}ms`;
-      node.style.left = `${pts[i].x - gD / 2}px`;
-      node.style.top = `${pts[i].y - gD / 2}px`;
-    });
-
-    // collaborators: one each, on the outer ring at the average angle of the games they worked on
-    const rx2 = w / 2 - small / 2 - 12;
-    const ry2 = Math.min(h / 2 - small / 2 - 26, ry1 * (rx2 / rx1));
-    const placed = solar.collab.map(d => {
-      const mine = solar.games.map((g, i) => ((g.credits ?? []).some(c => c.toLowerCase() === d.item.name.toLowerCase()) ? i : -1)).filter(i => i >= 0);
-      const sx = mine.reduce((sum, i) => sum + Math.cos(angles[i]), 0);
-      const sy = mine.reduce((sum, i) => sum + Math.sin(angles[i]), 0);
-      return { d, t: Math.atan2(sy, sx) };
-    }).sort((a, b) => a.t - b.t);
-    const minSep = Math.min(Math.PI, (small + 26) / ((rx2 + ry2) / 2));
-    for (let pass = 0; pass < 60 && placed.length > 1; pass++) {
-      for (let i = 0; i < placed.length; i++) {
-        const a = placed[i];
-        const b = placed[(i + 1) % placed.length];
-        let d = b.t - a.t;
-        if (i === placed.length - 1) d += Math.PI * 2;
-        if (d < minSep) {
-          const push = (minSep - d) / 2;
-          a.t -= push;
-          b.t += push;
-        }
-      }
-    }
-    placed.forEach(({ d, t }) => {
-      d.tx = cx + Math.cos(t) * rx2;
-      d.ty = cy + Math.sin(t) * ry2;
-      d.sz = small;
-      d.node.style.setProperty('--node-size', `${small}px`);
-      d.node.classList.add('team-node--small');
-      d.ta = solar.shown ? 1 : 0;
-      if (!d.solarPlaced) { d.solarPlaced = true; d.x = d.tx; d.y = d.ty; d.vx = 0; d.vy = 0; }
-    });
-    devs.forEach(d => { if (d.tx === undefined) { d.tx = cx; d.ty = cy; } });
-    updateAnchors();
-  }
-
-  // Clicking a creator selects them: their node is outlined and their games are outlined in the grid
+  // Clicking a creator selects them: they move to the middle with their games around them
   function selectPerson(name) {
     clearTimeout(release);
     selectedPerson = selectedPerson === name ? null : name;
     selected = false;
+    selectedRole = null;
     focus = null;
     projectRoles = {};
     launchActive = new Set();
+    if (selectedPerson) {
+      // collaborators shrink and travel out to their orbit, everyone else fades where they stand
+      view = { type: 'person', name: selectedPerson };
+    } else {
+      view = { type: 'all' };
+    }
     markSelectedPerson();
-    if (selectedPerson) enterSolar(selectedPerson);
-    else leaveSolar();
     arrange();
+    markRoleChips();
     window.dispatchEvent(new CustomEvent('person:select', { detail: selectedPerson }));
   }
 
+  // Clicking a role chip filters the explorer to the people with that role; the stickers stay
+  function selectRole(role) {
+    clearTimeout(release);
+    selectedRole = selectedRole === role ? null : role;
+    selectedPerson = null;
+    selected = false;
+    projectRoles = {};
+    launchActive = new Set();
+    if (selectedRole) {
+      view = { type: 'role', role: selectedRole };
+      focus = new Set(devs.filter(d => !d.launch && d.roles.includes(selectedRole)).map(d => d.item.name.toLowerCase()));
+    } else {
+      view = { type: 'all' };
+      focus = null;
+    }
+    markSelectedPerson();
+    arrange();
+    markRoleChips();
+    window.dispatchEvent(new CustomEvent('role:select', { detail: selectedRole }));
+  }
+
   window.addEventListener('team:focus', e => {
-    if (selected || solar) return;
+    if (selected || selectedPerson || selectedRole) return;
     clearTimeout(release);
     const credits = e.detail?.credits;
     const next = credits?.length ? new Set(credits.map(n => n.toLowerCase())) : null;
@@ -640,9 +874,12 @@
   });
 
   window.addEventListener('person:clear', () => { if (selectedPerson) selectPerson(selectedPerson); });
+  window.addEventListener('role:clear', () => { if (selectedRole) selectRole(selectedRole); });
 
   container.addEventListener('click', e => {
-    if (selectedPerson && !e.target.closest('.team-node')) selectPerson(selectedPerson);
+    if (e.target.closest('.team-node, .team-game')) return;
+    if (selectedPerson) selectPerson(selectedPerson);
+    else if (selectedRole) selectRole(selectedRole);
   });
 
   // ── Load people ────────────────────────────────────────────────────────────
@@ -664,19 +901,22 @@
       container.appendChild(node);
       const links = node.querySelector('.team-node-links');
       const d = { item, node, label: node.querySelector('.team-node-label'), roles: sortRoles(item.roles, item.name),
-        links: links ? links.offsetHeight + parseFloat(getComputedStyle(links).marginTop) : 0, x: 0, y: 0, a: 0, ta: 1 };
+        links: links ? links.offsetHeight + parseFloat(getComputedStyle(links).marginTop) : 0, x: 0, y: 0, a: 0, ta: 1,
+        p1: i * 2.3 + 0.7, p2: i * 1.7 + 2.1, f1: 0.0016 + (i % 5) * 0.0002, f2: 0.0013 + (i % 7) * 0.00017 };
       setChips(d, d.roles);
       return d;
     });
-    ['bbox', 'itch', 'steam'].forEach(kind => {
+    ['bbox', 'itch', 'steam'].forEach((kind, k) => {
       const node = buildLaunchNode(kind);
       node.style.setProperty('--delay', '0ms');
       container.appendChild(node);
       const d = { item: { name: `__launch-${kind}__`, roles: [], links: {} }, launch: true, node,
-        label: node.querySelector('.team-node-label'), roles: [], links: 0, x: 0, y: 0, a: 0, ta: 0 };
+        label: node.querySelector('.team-node-label'), roles: [], links: 0, x: 0, y: 0, a: 0, ta: 0,
+        p1: k * 2.9, p2: k * 1.3 + 1, f1: 0.0018, f2: 0.0015 };
       launchDevs[kind] = d;
       devs.push(d);
     });
+    buildBodies();
     buildWeb();
     arrange();
     requestAnimationFrame(tick);

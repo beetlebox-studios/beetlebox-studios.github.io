@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -62,10 +62,87 @@ class CardGrid {
 
 let selected = null;
 let selectedPersonName = null;
+let selectedRoleName = null;
 
 const BEETLE_ICON = 'https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logo/beetle_boot_96.png';
 
 // One launch button per place the game can be played: BeetleBox (the web build), itch.io and Steam
+const GIF_SWITCH_AFTER = 1500;
+const GIF_UNLOAD_AFTER = 45000;
+const HOVER_SELECT_AFTER = 900;
+const PLAY_PREFERENCE = ['steam', 'itch', 'bbox'];
+
+function gifsOf(item) {
+  return [item.gif ?? []].flat().filter(Boolean);
+}
+
+function shuffled(list, avoidFirst) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  if (out.length > 1 && out[0] === avoidFirst) out.push(out.shift());
+  return out;
+}
+
+function makeGifPreview(sources) {
+  const el = document.createElement('img');
+  el.className = 'work-gif';
+  el.alt = '';
+  el.setAttribute('aria-hidden', 'true');
+  el.addEventListener('load', () => { if (el.getAttribute('src')) el.classList.add('is-loaded'); });
+  let order = shuffled(sources);
+  let index = 0;
+  let hiddenAt = 0;
+  let unloadTimer = null;
+  let visible = false;
+
+  const load = src => {
+    el.classList.remove('is-loaded');
+    el.src = src;
+  };
+
+  return {
+    el,
+    show() {
+      if (visible) return;
+      visible = true;
+      clearTimeout(unloadTimer);
+      el.classList.add('is-shown');
+      if (!el.getAttribute('src')) { load(order[index]); return; }
+      if (sources.length > 1 && performance.now() - hiddenAt > GIF_SWITCH_AFTER) {
+        index++;
+        if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
+        load(order[index]);
+      }
+    },
+    hide() {
+      if (!visible) return;
+      visible = false;
+      hiddenAt = performance.now();
+      el.classList.remove('is-shown');
+      clearTimeout(unloadTimer);
+      unloadTimer = setTimeout(() => {
+        el.classList.remove('is-loaded');
+        el.removeAttribute('src');
+        if (sources.length > 1) {
+          index++;
+          if (index >= order.length) { order = shuffled(sources, order[order.length - 1]); index = 0; }
+        }
+      }, GIF_UNLOAD_AFTER);
+    },
+  };
+}
+
+// a selected game's gif keeps looping even when the mouse leaves; a deselected one hides unless hovered
+function syncGif(card) {
+  const gif = card._gif;
+  if (!gif) return;
+  if (card.classList.contains('is-selected') || card.matches(':hover')) gif.show();
+  else gif.hide();
+}
+
 function launchOf(item) {
   const links = item.links ?? {};
   const list = [];
@@ -75,25 +152,44 @@ function launchOf(item) {
   return list;
 }
 
+// the same launch the right panel offers, as one play button over the card art
+function playOverlay(item) {
+  const launch = launchOf(item);
+  const pick = PLAY_PREFERENCE.map(kind => launch.find(l => l.kind === kind)).find(Boolean);
+  if (!pick) return null;
+  const a = el('a', 'work-play-over');
+  a.href = pick.url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.setAttribute('aria-label', `Play ${item.title} on ${pick.label}`);
+  a.title = pick.label;
+  a.innerHTML = '<i class="fa-solid fa-play"></i>';
+  a.addEventListener('click', e => e.stopPropagation());
+  return a;
+}
+
 function setSelected(card, item) {
   if (selected) {
     selected.card.classList.remove('is-selected');
     selected.card.setAttribute('aria-pressed', 'false');
+    syncGif(selected.card);
   }
   selected = card ? { card, item } : null;
   showRelated(null);
   if (card) {
     card.classList.add('is-selected');
     card.setAttribute('aria-pressed', 'true');
+    syncGif(card);
   }
   window.dispatchEvent(new CustomEvent('team:select', {
-    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item) } : null,
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: stickersOf(item), cover: item.image || '' } : null,
   }));
 }
 
 // Outline the games a selected creator worked on and dim the rest
 function showRelated(name) {
   selectedPersonName = name;
+  selectedRoleName = null;
   (GRID_REGISTRY['games-grid'] ?? []).forEach(({ item, card }) => {
     const related = !!name && (item.credits ?? []).some(c => c.toLowerCase() === name.toLowerCase());
     card.classList.toggle('is-related', related);
@@ -107,11 +203,34 @@ window.addEventListener('game:pick', e => {
   if (entry) setSelected(entry.card, entry.item);
 });
 
+// Outline the games where someone worked in the selected role
+function showRelatedRole(role) {
+  selectedRoleName = role;
+  (GRID_REGISTRY['games-grid'] ?? []).forEach(({ item, card }) => {
+    const related = !!role && Object.values(item.roles ?? {}).some(list => list.includes(role));
+    card.classList.toggle('is-related', related);
+    card.classList.toggle('is-dim', !!role && !related);
+  });
+}
+
+window.addEventListener('role:select', e => {
+  const role = e.detail;
+  if (role && selected) {
+    selected.card.classList.remove('is-selected');
+    selected.card.setAttribute('aria-pressed', 'false');
+    syncGif(selected.card);
+    selected = null;
+  }
+  selectedPersonName = null;
+  showRelatedRole(role);
+});
+
 window.addEventListener('person:select', e => {
   const name = e.detail;
   if (name && selected) {
     selected.card.classList.remove('is-selected');
     selected.card.setAttribute('aria-pressed', 'false');
+    syncGif(selected.card);
     selected = null;
   }
   showRelated(name);
@@ -125,11 +244,13 @@ document.addEventListener('click', e => {
   if (e.target.closest('.work-card, #people-grid')) return;
   if (selected) setSelected(null);
   if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
+  if (selectedRoleName) window.dispatchEvent(new CustomEvent('role:clear'));
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (selected) setSelected(null);
   if (selectedPersonName) window.dispatchEvent(new CustomEvent('person:clear'));
+  if (selectedRoleName) window.dispatchEvent(new CustomEvent('role:clear'));
 });
 
 // ── Card type definitions ─────────────────────────────────────────────────────
@@ -154,22 +275,36 @@ const CARD_TYPES = {
       }
       imgWrap.appendChild(el('div', 'work-placeholder-bg'));
 
-      // GIF preview — sits above thumbnail, hidden until hover.
-      // src is left empty and only assigned on mouseenter so the GIF
-      // starts from frame 1 each time (browsers restart a GIF when src is set).
-      // On mouseleave src is cleared, stopping playback and freeing memory.
-      if (item.gif && !item.draft) {
-        const gifEl = makeImg('', item.title, 'work-gif');
-        gifEl.setAttribute('aria-hidden', 'true');
-        card.addEventListener('mouseenter', () => { gifEl.src = item.gif; });
-        card.addEventListener('mouseleave', () => { gifEl.src = ''; });
-        imgWrap.appendChild(gifEl);
+      const gifs = gifsOf(item);
+      if (gifs.length && !item.draft) {
+        const gif = makeGifPreview(gifs);
+        card.addEventListener('mouseenter', () => gif.show());
+        card.addEventListener('mouseleave', () => syncGif(card));
+        card._gif = gif;
+        imgWrap.appendChild(gif.el);
       }
 
+      const play = playOverlay(item);
+      if (play) imgWrap.appendChild(play);
+
+      // resting on a card selects it, the same as a click
+      let dwell = 0;
       card.addEventListener('mouseenter', () => {
         window.dispatchEvent(new CustomEvent('team:focus', { detail: item.credits ? { credits: item.credits, roles: item.roles ?? {} } : null }));
+        clearTimeout(dwell);
+        if (selected?.card === card) return;
+        card.classList.add('is-dwelling');
+        dwell = setTimeout(() => {
+          card.classList.remove('is-dwelling');
+          if (selected?.card === card) return;
+          setSelected(card, item);
+          card._hoverPicked = true;
+        }, HOVER_SELECT_AFTER);
       });
       card.addEventListener('mouseleave', () => {
+        clearTimeout(dwell);
+        card.classList.remove('is-dwelling');
+        card._hoverPicked = false;
         window.dispatchEvent(new CustomEvent('team:focus', { detail: null }));
       });
 
@@ -188,7 +323,7 @@ const CARD_TYPES = {
       }
 
       if (item.draft) {
-        const draft = text('span', 'work-status work-draft-badge', 'Draft');
+        const draft = text('span', 'pill work-status work-draft-badge', 'Draft');
         draft.dataset.status = 'draft';
         imgWrap.appendChild(draft);
       }
@@ -198,7 +333,7 @@ const CARD_TYPES = {
       const titleRow = el('div', 'work-title-row');
       titleRow.appendChild(text('p', 'work-title', item.title));
       if (item.status) {
-        const status = text('span', 'work-status', item.status);
+        const status = text('span', 'pill work-status', item.status);
         status.dataset.status = item.status.toLowerCase().replace(/\s+/g, '-');
         titleRow.appendChild(status);
       }
@@ -217,7 +352,13 @@ const CARD_TYPES = {
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-pressed', 'false');
-      card.addEventListener('click', () => toggleSelected(card, item));
+      card.addEventListener('click', () => {
+        // a click right after a long hover picked the card keeps it picked
+        if (card._hoverPicked) { card._hoverPicked = false; return; }
+        clearTimeout(dwell);
+        card.classList.remove('is-dwelling');
+        toggleSelected(card, item);
+      });
       card.addEventListener('keydown', e => {
         if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
         e.preventDefault();

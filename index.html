@@ -8,8 +8,9 @@
   <script>
     // Theme before first paint: saved choice, else the system preference
     (function () {
-      var saved = null;
-      try { saved = localStorage.getItem('theme'); } catch (e) {}
+      var saved = new URLSearchParams(location.search).get('theme');
+      if (saved !== 'light' && saved !== 'dark') saved = null;
+      try { saved = saved || localStorage.getItem('theme'); } catch (e) {}
       var light = saved ? saved === 'light' : matchMedia('(prefers-color-scheme: light)').matches;
       document.documentElement.dataset.theme = light ? 'light' : 'dark';
     })();
@@ -19,58 +20,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+  <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-<!-- ── Navbar ─────────────────────────────────────────── -->
-<header id="navbar">
-  <div class="navbar-inner">
-    <a href="#" class="navbar-logo" aria-label="BeetleBox Studios"><span class="navbar-logo-mark"></span></a>
-    <div class="navbar-actions">
-      <span class="admin-only admin-pill">Admin</span>
-      <!-- Resets every setting changed from its default (language, accent color, …) -->
-      <button class="icon-btn settings-reset" id="settings-reset" aria-label="Reset settings" title="Reset settings" hidden>
-        <i class="fa-solid fa-rotate-left"></i>
-      </button>
-      <!-- Language picker -->
-      <div class="lang-wrap" id="lang-wrap">
-        <button class="icon-btn lang-btn" id="lang-btn" aria-label="Select language" aria-expanded="false" aria-haspopup="listbox">
-          <span class="fi fi-un lang-btn-flag" id="lang-btn-flag"></span>
-        </button>
-        <div class="lang-dropdown" id="lang-dropdown" role="listbox" aria-label="Language">
-          <!-- populated by translate.js -->
-        </div>
-      </div>
-      <!-- Hidden Google Translate element -->
-      <div id="google_translate_element" style="display:none"></div>
-      <!-- Accent color picker -->
-      <div class="accent-wrap" id="accent-wrap">
-        <button class="icon-btn accent-btn" id="accent-btn" aria-label="Change accent color">
-          <span class="accent-orb" id="accent-orb"></span>
-        </button>
-        <div class="accent-popup" id="accent-popup">
-          <input type="range" id="hue-slider" class="hue-slider" min="0" max="1000" step="1" value="500" />
-          <button class="icon-btn accent-reset-btn" id="accent-reset-btn" aria-label="Reset accent color">
-            <i class="fa-solid fa-rotate-left"></i>
-          </button>
-        </div>
-      </div>
-      <!-- Light / dark toggle -->
-      <button class="icon-btn theme-btn" id="theme-btn" aria-label="Switch between light and dark mode">
-        <i class="fa-solid fa-moon"></i><i class="fa-solid fa-sun"></i>
-      </button>
-      <!-- Search -->
-      <div class="search-wrap" id="search-wrap">
-        <input type="text" id="search-input" placeholder="Search…" autocomplete="off" aria-label="Search page" />
-        <span id="search-count"></span>
-        <button class="icon-btn" id="search-btn" aria-label="Search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-</header>
+<header id="navbar"></header>
 
 <main id="page">
 
@@ -121,15 +76,26 @@
 <footer id="site-footer">
   <div class="footer-inner">
     <p class="footer-copy"></p>
+    <a class="footer-version" id="footer-version" href="https://github.com/beetlebox-studios/beetlebox-studios.github.io/releases" target="_blank" rel="noopener" hidden></a>
+    <a class="footer-github" href="https://github.com/beetlebox-studios" target="_blank" rel="noopener" aria-label="BeetleBox Studios on GitHub"><i class="fa-brands fa-github"></i></a>
   <script>
-    document.querySelector('.footer-copy').textContent = 
+    document.querySelector('.footer-copy').textContent =
       `© BeetleBox Studios ${new Date().getFullYear()} · Philadelphia, PA`;
+    fetch('package.json')
+      .then(r => r.json())
+      .then(({ version }) => {
+        const link = document.getElementById('footer-version');
+        link.textContent = 'v' + version;
+        link.hidden = false;
+      })
+      .catch(() => {});
   </script>
   </div>
 </footer>
 
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="js/header.js"></script>
 <script src="js/main.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/team.js"></script>

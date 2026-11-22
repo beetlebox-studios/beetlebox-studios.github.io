@@ -1,0 +1,22 @@
+{
+  "Katami": {
+    "repo": "PaperGame",
+    "pitch": "Katami: A Paper Story is a 2D puzzle game being developed in the Unity engine.",
+    "about": "Katami is a handcrafted puzzle game about folding paper, patience, and finding the shape of a friendship. Release date TBA."
+  },
+  "250 is...": {
+    "repo": "250-is",
+    "pitch": "250 is... is a 2D trivia game made in the Unity engine.",
+    "about": "As our Nation turns 250, We ask ourselves, what does this number even mean? \n\nWell worry not! For in this Trivia game, you’ll find countless ways to give the number weight, height and depth with this number trivia game!\n\nCreated for PHL Game Jam 2026\n\nElan - Coding\\\nMax - Design\\\nDrew - Art\n\nwith support from Ryan and Ako"
+  },
+  "Sumo Square": {
+    "repo": "sumo-square",
+    "pitch": "Sumo Square is a 2D game being developed in the Unity engine.",
+    "about": "Made by Elan, Max, Ryan and Andrew."
+  },
+  "Molith": {
+    "repo": "Molith",
+    "pitch": "Molith is a 3D game made in the Unity engine.",
+    "about": "This was made in a couple of weeks for the Frogwell community Secret Santa gamejam. Prompts were written by participants, and randomly exchanged amongst the group.\n\nWe were given the following prompt by fellow game developer [HumanIsRed](https://humanisred.itch.io):\n\n> Dear Santa,\n>\n> I wish for a game that features a megastructure! What you do with the mega structure is up to you. You can manage it or simply navigate it but it must be a central part of the gameplay and you must FEEL the sheer size of it."
+  }
+}

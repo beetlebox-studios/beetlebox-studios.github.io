@@ -29,13 +29,12 @@
   let origin = { x: innerWidth / 2, y: innerHeight / 2 };
   addEventListener('pointerdown', e => { origin = { x: e.clientX, y: e.clientY }; }, true);
 
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let running = null;
 
   // Changes the theme inside a view transition so the new look is revealed through a growing circle.
-  // Browsers without view transitions (and reduced-motion users) just switch.
+  // Browsers without view transitions just switch.
   function reveal(change) {
-    if (!document.startViewTransition || reduceMotion.matches) { change(); return; }
+    if (!document.startViewTransition) { change(); return; }
     if (running) { running.skipTransition(); }
     const { x, y } = origin;
     const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
@@ -51,7 +50,9 @@
   }
 
   const system = () => (query.matches ? 'light' : 'dark');
-  let override = saved();
+  const fromUrl = urlSetting('theme');
+  let override = fromUrl === 'light' || fromUrl === 'dark' ? fromUrl : saved();
+  setUrlSetting('theme', override);
 
   query.addEventListener('change', () => { if (!override) apply(system()); });
 
@@ -59,6 +60,7 @@
     e.stopPropagation();
     override = root.dataset.theme === 'light' ? 'dark' : 'light';
     store(override);
+    setUrlSetting('theme', override);
     reveal(() => apply(override));
   });
 
@@ -67,6 +69,7 @@
     reset: () => {
       override = null;
       store(null);
+      setUrlSetting('theme', null);
       reveal(() => apply(system()));
     },
   });
