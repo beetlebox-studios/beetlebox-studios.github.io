@@ -7,7 +7,6 @@
     "status": "In Development",
     "description": "A puzzle game about folding paper.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/katami_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/katami.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/katami.gif",
     "credits": [
       "Elan",
@@ -27,7 +26,6 @@
     "status": "Shelved",
     "description": "Puru Puru is a pufferfish who wants his tank all to himself.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bubblefish_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/bubblefish.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/bubblefish.gif",
     "credits": [
       "Elan",
@@ -39,13 +37,7 @@
       "play": "https://beetlebox-studios.github.io/games/bubblefish/",
       "itch": "https://elanmakesgames.itch.io/bubblefish"
     },
-    "repo": "BubbleFish",
-    "stickers": [
-      "images/stickers/bubblefish/crab.png",
-      "images/stickers/bubblefish/bubble.png",
-      "images/stickers/bubblefish/bubble.png",
-      "images/stickers/bubblefish/bubble.png"
-    ]
+    "repo": "BubbleFish"
   },
   {
     "title": "Book Wyrm",
@@ -53,7 +45,6 @@
     "status": "In Development",
     "description": "A retro word dungeon crawler.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/bookwyrm_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/bookwyrm.png",
     "screenshot": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/screenshots/bookwyrm_playfield.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/bookwyrm.gif",
     "credits": [
@@ -64,13 +55,7 @@
       "play": "https://beetlebox-studios.github.io/games/lexwright/",
       "itch": "https://elanmakesgames.itch.io/book-wyrm"
     },
-    "favicons": [
-      "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/favicons/bookwyrm.png"
-    ],
-    "repo": "book-wyrm",
-    "stickers": [
-      "images/stickers/book-wyrm/worm.png"
-    ]
+    "repo": "book-wyrm"
   },
   {
     "title": "250 is...",
@@ -80,7 +65,6 @@
     "status": "Released",
     "description": "As our Nation turns 250, what does this number even mean? A number trivia game.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/250is_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/250is.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/250is.gif",
     "jam": {
       "label": "JAM",
@@ -118,7 +102,6 @@
     "repo": "sumo-square",
     "status": "In Development",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/sumo_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/sumosquare.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/sumo.gif",
     "jam": {
       "label": "JAM",
@@ -142,7 +125,6 @@
     "repo": "NumberGame",
     "status": "Released",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/learntocount_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/learntocount.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/learntocount.gif",
     "jam": {
       "label": "GMTK",
@@ -156,21 +138,7 @@
     ],
     "links": {
       "itch": "https://alphons6.itch.io/learn-to-count"
-    },
-    "stickers": [
-      "images/stickers/learn-to-count/goblin.png",
-      "images/stickers/learn-to-count/dino.png",
-      "images/stickers/learn-to-count/star-1.png",
-      "images/stickers/learn-to-count/star-2.png",
-      "images/stickers/learn-to-count/star-3.png",
-      "images/stickers/learn-to-count/star-4.png",
-      "images/stickers/learn-to-count/star-5.png",
-      "images/stickers/learn-to-count/star-6.png",
-      "images/stickers/learn-to-count/star-7.png",
-      "images/stickers/learn-to-count/star-8.png",
-      "images/stickers/learn-to-count/star-9.png",
-      "images/stickers/learn-to-count/star-10.png"
-    ]
+    }
   },
   {
     "title": "Masknum Opus",
@@ -180,7 +148,6 @@
     "status": "Released",
     "description": "Infiltrate a bizarre, masked cult.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/masknum_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/masknumopus.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mask.gif",
     "jam": {
       "label": "JAM",
@@ -195,12 +162,7 @@
     "links": {
       "play": "https://beetlebox-studios.github.io/games/masknum-opus/",
       "itch": "https://elanmakesgames.itch.io/mask"
-    },
-    "stickers": [
-      "images/stickers/masknum-opus/coin.png",
-      "images/stickers/masknum-opus/card.png",
-      "images/stickers/masknum-opus/rose.png"
-    ]
+    }
   },
   {
     "title": "Molith",
@@ -210,7 +172,6 @@
     "status": "Released",
     "description": "Explore a mysterious field.",
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/molith_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/molith.png",
     "gif": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/preview_gifs/mono.gif",
     "jam": {
       "label": "JAM",
@@ -240,7 +201,6 @@
       ]
     },
     "image": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/project_thumbnails/octane_thumbnail.png",
-    "logo": "https://raw.githubusercontent.com/beetlebox-studios/branding-assets/main/logos/octane.png",
     "gif": "",
     "links": {}
   }

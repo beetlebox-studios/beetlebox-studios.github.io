@@ -4,7 +4,7 @@
 //   new CardGrid({ src, target, type })
 //
 // JSON shape — game:
-//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), logo, favicons, stickers, jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
+//   { title, meta, order, repo, stack, status, description, image, screenshot, draft, gif (one url or a list to shuffle), jam: { label, logo }, credits: ["Name", …], roles: { Name: ["Role", …] },
 //     links: { play, itch, steam, trailer, github } }
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -190,7 +190,7 @@ function setSelected(card, item) {
     syncGif(card);
   }
   window.dispatchEvent(new CustomEvent('team:select', {
-    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), stickers: stickersOf(item), cover: item.image || '' } : null,
+    detail: card ? { title: item.title, credits: item.credits ?? [], roles: item.roles ?? {}, launch: launchOf(item), cover: item.image || '' } : null,
   }));
 }
 
@@ -208,7 +208,7 @@ function showRelated(name) {
 // a game circle in the creator view was clicked: select that game
 window.addEventListener('game:pick', e => {
   const entry = (GRID_REGISTRY['games-grid'] ?? []).find(({ item }) => item.title === e.detail);
-  if (entry) setSelected(entry.card, entry.item);
+  if (entry && selected?.card !== entry.card) setSelected(entry.card, entry.item);
 });
 
 // Outline the games where someone worked in the selected role

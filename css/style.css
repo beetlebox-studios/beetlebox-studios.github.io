@@ -1186,93 +1186,27 @@ body {
 }
 
 
-/* ── Creator view: games orbit the selected creator ───────────────────────── */
-.team-game {
-  position: absolute;
-  z-index: 4;
-  display: block;
-  cursor: pointer;
-}
-.team-game-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--card-bg);
-  border: 1px solid color-mix(in oklch, var(--primary) 55%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 22px color-mix(in oklch, var(--primary) 30%, transparent);
-  transition: box-shadow 0.3s var(--ease);
-}
-.team-game:hover .team-game-ring,
-.team-game:focus-visible .team-game-ring {
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 30px color-mix(in oklch, var(--primary) 65%, transparent);
-}
-/* the crop window drifts over the artwork like a magic ball, so more of the image shows over time */
-.team-game-img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  animation: game-pan var(--pan, 11s) ease-in-out var(--fd, 0s) infinite alternate;
-}
-.team-game-label {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  padding: 0.1rem 0.4rem;
-  border-radius: 6px;
-  background: color-mix(in oklch, var(--page-bg) 85%, transparent);
-}
-.team-game-img--icon { image-rendering: pixelated; }
-.team-game--pixel .team-sticker { image-rendering: pixelated; }
-@keyframes game-pan {
-  from { object-position: 0% 40%; transform: scale(1.1); }
-  to   { object-position: 100% 60%; transform: scale(1.4); }
-}
-@keyframes game-float {
-  from { translate: -6px -9px; }
-  to   { translate: 8px 9px; }
-}
 .team-node--small .team-node-roles { display: none; }
 .team-node--small .team-node-name { font-size: 0.66rem; }
-@media (prefers-reduced-motion: reduce) {
-  .team-game-img { animation: none; }
-}
 
-/* Sticker planets: games with favicons show them as outlined stickers, no circle and no label */
-.team-game--sticker { z-index: 3; }
-.team-sticker {
-  display: block;
-  width: 100%;
-  height: 100%;
-  rotate: var(--rot, 0deg);
-  /* soft drop shadow only (no outline) */
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
-}
-.team-game--center { z-index: 2; }
-
-/* The selected game's cover: slightly rounded, not a circle */
+/* Game covers: the selected game's capsule, or a creator's games around them */
 .team-cover {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   border-radius: 10px;
   overflow: hidden;
+  cursor: pointer;
   border: 1px solid color-mix(in oklch, var(--primary) 45%, transparent);
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--page-bg) 85%, transparent);
-  pointer-events: none;
+  transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.team-cover:hover,
+.team-cover:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--page-bg) 85%, transparent), 0 0 22px color-mix(in oklch, var(--primary) 45%, transparent);
 }
 .team-cover-img { display: block; width: 100%; height: 100%; object-fit: cover; }
-
-/* stickers are decoration: clicking them does nothing */
-.team-game--sticker { pointer-events: none; }
-.team-game--out { pointer-events: none; }
+.team-cover--out { pointer-events: none; }
 /* role chips select a role */
 .team-node:not(.team-node--launch) .team-chip { cursor: pointer; }
 .team-chip--selected { outline: 2px solid var(--primary); outline-offset: 1px; }
